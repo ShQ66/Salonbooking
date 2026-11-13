@@ -53,7 +53,7 @@ function rnd8(){var a=new Uint32Array(1);crypto.getRandomValues(a);return String
 var D={name:"",phone:"",services:[],cards:[],links:[],days:{},dev:rnd8(),act:null,last:td(),used:[]};
 try{var s0=localStorage.getItem("sal");if(s0)D=Object.assign(D,JSON.parse(s0))}catch(e){}
 function sv(){try{localStorage.setItem("sal",JSON.stringify(D))}catch(e){}}
-var PL=null,PUB=null;try{PUB=JSON.parse(localStorage.getItem("pub"))}catch(e){}
+var PL=null,PUB=null,MG={},SP=null,PV={};try{PUB=JSON.parse(localStorage.getItem("pub"))}catch(e){}
 var mode="a",tab="s",F=null,sel={s:null,d:null,t:null,pt:"dep"},CV={},C0=null;
 var h=location.hash.slice(1);
 if(h.length>10){try{C0=dec(h);mode="c"}catch(e){}}
@@ -119,12 +119,30 @@ function gen(){var a=$("ha").value.split(":"),b=$("hb").value.split(":"),st=nu("
  for(var i=0;i<n;i++){var k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");if(!(fr&&d.getDay()===5)){var ts=[];for(var m=s0;m+st<=e0;m+=st)ts.push(String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"));o[k]=ts}d.setDate(d.getDate()+1)}
  D.days=o;sv();A()}
 
-function loadPlans(){fetch("plans.json?"+Date.now()).then(function(r){return r.json()}).then(function(j){PL=j.plans||[];if(j.pub&&!PUB){PUB=j.pub;try{localStorage.setItem("pub",JSON.stringify(PUB))}catch(e){}}A()}).catch(function(){PL=[];A()})}
+function loadPlans(){fetch("plans.json?"+Date.now()).then(function(r){return r.json()}).then(function(j){PL=j.plans||[];MG=j.mgr||{};if(j.pub&&!PUB){PUB=j.pub;try{localStorage.setItem("pub",JSON.stringify(PUB))}catch(e){}}A()}).catch(function(){PL=[];A()})}
 function tA(){
- var pl=(PL||[]).map(function(x){var f=fp(x);return '<div class="row"><div><b>'+esc(x.n)+'</b><small>'+x.days.toLocaleString("fa-IR")+' روز'+(dtx(x)?' · '+dtx(x):'')+'</small></div><div><b>'+fm(f)+'</b></div></div>'}).join("")||'<p class="mu">'+(PL?'پلنی در دسترس نیست.':'در حال دریافت پلن‌ها...')+'</p>';
- return '<div class="c"><h2>کد دستگاه</h2><p style="font-size:24px;letter-spacing:3px;margin:4px 0"><b>'+D.dev+'</b></p><p class="mu">این کد را همراه نام پلن برای مدیر بفرست.</p><button class="g" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'کد دستگاه: '+D.dev+'\')">کپی کد دستگاه</button></div>'+
- '<div class="c"><h2>پلن‌های اشتراک</h2>'+pl+'<p class="mu">مبلغ را به کارت مدیر واریز کن و رسید و کد دستگاه را بفرست.</p></div>'+
+ var x=SP&&(PL||[]).filter(function(p){return p.id===SP})[0],cs=MG.cards||[],c=MG.c||{};
+ var pl=(PL||[]).map(function(p){var f=fp(p);return '<div class="row"><div><b>'+esc(p.n)+'</b><small>'+p.days.toLocaleString("fa-IR")+' روز'+(dtx(p)?' · '+dtx(p):'')+'</small></div><div style="text-align:center"><b>'+fm(f)+'</b><br><button class="'+(SP===p.id?'on':'')+'" onclick="selP(\''+p.id+'\')">انتخاب</button></div></div>'}).join("")||'<p class="mu">'+(PL?'پلنی در دسترس نیست.':'در حال دریافت پلن‌ها...')+'</p>';
+ var ch=[["sms","پیامک"],["wa","واتس‌اپ"],["eitaa","ایتا"],["rubika","روبیکا"],["tg","تلگرام"]].filter(function(k){return c[k[0]]}).map(function(k,i){return '<button class="'+(i?'g':'')+'" onclick="sendP(\''+k[0]+'\')">ارسال با '+k[1]+'</button>'}).join("");
+ var pay=x?'<div class="c"><h2>پرداخت: '+esc(x.n)+'</h2><p>مبلغ قابل پرداخت: <b>'+fm(fp(x))+'</b></p><p class="mu">مبلغ را کارت‌به‌کارت کن، سپس سه کادر پایین را پر کن.</p>'+
+  (cs.map(function(k){return '<div class="row"><div><b>'+esc(k.h)+'</b> · '+esc(k.b)+'<small class="ltr">'+esc(k.num)+'</small></div><button class="g" onclick="cp(this)" data-t="'+esc(en(k.num))+'">کپی</button></div>'}).join("")||'<p class="er">مدیر هنوز کارتی ثبت نکرده.</p>')+
+  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(PV.pa||"")+'" oninput="PV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(PV.pd||"")+'" oninput="PV.pd=this.value"><input id="ph2" placeholder="ساعت واریز" value="'+esc(PV.pt||"")+'" oninput="PV.pt=this.value"></div><p class="mu">کد دستگاه ('+D.dev+') خودکار همراه پیام ارسال می‌شود.</p><div class="ch">'+(ch||'<span class="er">مدیر راه تماسی تعریف نکرده.</span>')+'</div><p id="pm" class="mu"></p></div>':'';
+ var pend=D.pend?'<div class="c"><h2 class="ok">درخواست ارسال شد</h2><p>پلن «'+esc(D.pend.plan)+'» · '+fm(D.pend.price)+'<br>منتظر تأیید مدیر و کد فعال‌سازی هستی. کد را پایین وارد کن.</p><button class="g" onclick="D.pend=null;sv();A()">لغو / ارسال دوباره</button></div>':'';
+ return '<div class="c"><h2>کد دستگاه</h2><p style="font-size:24px;letter-spacing:3px;margin:4px 0"><b>'+D.dev+'</b></p></div>'+pend+
+ '<div class="c"><h2>پلن‌های اشتراک</h2>'+pl+'</div>'+pay+
  '<div class="c"><h2>کد فعال‌سازی</h2><textarea id="ac" class="ltr" rows="3" placeholder="کد را اینجا بچسبان"></textarea><button onclick="act()">فعال‌سازی</button><p id="am" class="mu"></p></div>';
+}
+function selP(i){SP=i;A();window.scrollTo(0,document.body.scrollHeight/3)}
+function sendP(t){
+ var x=(PL||[]).filter(function(p){return p.id===SP})[0],m=$("pm"),c=MG.c||{};
+ if(!x)return;
+ if(!PV.pa||!PV.pd||!PV.pt){m.textContent="مبلغ، تاریخ و ساعت واریز را کامل کن.";return}
+ var txt="درخواست اشتراک\nکد دستگاه: "+D.dev+"\nپلن: "+x.n+" ("+x.days+" روز)\nمبلغ پلن: "+fm(fp(x))+"\nمبلغ واریزی: "+PV.pa+"\nتاریخ واریز: "+PV.pd+"\nساعت واریز: "+PV.pt+(D.name?"\nسالن: "+D.name:""),e=encodeURIComponent,num=String(c[t]).replace(/\D/g,"");
+ D.pend={plan:x.n,price:fp(x),t:td()};sv();
+ if(t==="sms")location.href="sms:"+num+"?body="+e(txt);
+ else if(t==="wa")window.open("https://wa.me/98"+num.replace(/^0/,"")+"?text="+e(txt));
+ else{try{navigator.clipboard.writeText(txt)}catch(x2){}alert("پیام کپی شد. در صفحه بعد آن را برای مدیر بچسبان و ارسال کن.");window.open(c[t])}
+ A();
 }
 function act(){
  var m=$("am"),c=$("ac").value.trim().split(".");if(c.length!==2){m.textContent="کد معتبر نیست.";return}
@@ -136,7 +154,7 @@ function act(){
   if((new Date(eff())-new Date(iss))/864e5>60){m.textContent="مهلت استفاده از این کد گذشته.";return}
   crypto.subtle.importKey("jwk",PUB,{name:"ECDSA",namedCurve:"P-256"},false,["verify"]).then(function(k){return crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},k,u2b(c[1]),raw)}).then(function(ok){
    if(!ok){m.textContent="کد جعلی یا اشتباه است.";return}
-   var rest=Math.max(0,left());D.act={start:eff(),days:rest+ +p[1]};D.used.push(c[1]);sv();A()
+   D.pend=null;var rest=Math.max(0,left());D.act={start:eff(),days:rest+ +p[1]};D.used.push(c[1]);sv();A()
   }).catch(function(){m.textContent="خطا در بررسی کد."})
  }catch(e){m.textContent="کد معتبر نیست."}
 }
