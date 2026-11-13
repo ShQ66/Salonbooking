@@ -34,6 +34,7 @@ button:disabled{opacity:.4}
 </head>
 <body>
 <div class="w" id="app"></div>
+<p class="mu" style="text-align:center;font-size:11px">نسخه برنامه: ۱۳ آبان‌ماه ۱۴۰۵ — ب</p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 var app=document.getElementById("app");
@@ -50,7 +51,7 @@ function b2u(b){var s="",u=new Uint8Array(b);for(var i=0;i<u.length;i++)s+=Strin
 function u2b(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";var r=atob(s),u=new Uint8Array(r.length);for(var i=0;i<r.length;i++)u[i]=r.charCodeAt(i);return u}
 function rnd8(){var a=new Uint32Array(1);crypto.getRandomValues(a);return String(10000000+a[0]%90000000)}
 
-var D={name:"",phone:"",services:[],cards:[],links:[],days:{},dev:rnd8(),act:null,last:td(),used:[]};
+var D={name:"",fn:"",ln:"",nick:"",addrs:[],phone:"",services:[],cards:[],links:[],days:{},dev:rnd8(),act:null,last:td(),used:[]};
 try{var s0=localStorage.getItem("sal");if(s0)D=Object.assign(D,JSON.parse(s0))}catch(e){}
 function sv(){try{localStorage.setItem("sal",JSON.stringify(D))}catch(e){}}
 var PL=null,PUB=null,MG={},SP=null,PV={};try{PUB=JSON.parse(localStorage.getItem("pub"))}catch(e){}
@@ -58,7 +59,24 @@ var mode="a",tab="s",F=null,sel={s:null,d:null,t:null,pt:"dep"},CV={},C0=null;
 var h=location.hash.slice(1);
 if(h.length>10){try{C0=dec(h);mode="c"}catch(e){}}
 if(D.last<td())D.last=td();
+if(dname()&&!D.fn&&!D.nick)D.nick=dname();
 
+function fv(n){return n?Number(n).toLocaleString("en-US"):""}
+function fi(el){var n=en(el.value).replace(/\D/g,"");el.value=n?Number(n).toLocaleString("en-US"):""}
+function fdl(d){return d?new Intl.DateTimeFormat("fa-IR-u-ca-persian",{year:"numeric",month:"long",day:"numeric"}).format(new Date(d+"T12:00:00")):""}
+function addD(d,n){var x=new Date(d+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)}
+function dname(){return D.nick||((D.fn||"")+" "+(D.ln||"")).trim()}
+function pf(){sv();var e=$("hn");if(e)e.textContent=dname()||"پنل سالن"}
+function profile(){return '<div class="c"><h2>مشخصات</h2><div class="r"><input placeholder="نام" value="'+esc(D.fn)+'" oninput="D.fn=this.value;pf()"><input placeholder="نام خانوادگی" value="'+esc(D.ln)+'" oninput="D.ln=this.value;pf()"></div><input class="ltr" inputmode="tel" placeholder="شماره موبایل" value="'+esc(D.phone)+'" oninput="D.phone=this.value;pf()"><input placeholder="نام اختصاری (اختیاری): نام سالن یا هر کلمه‌ای" value="'+esc(D.nick)+'" oninput="D.nick=this.value;pf()"><p class="mu">اگر نام اختصاری بنویسی، همان بالای صفحه و در صفحه مشتری نمایش داده می‌شود؛ وگرنه نام و نام خانوادگی.</p></div>'}
+function adr(f){return D.addrs.map(function(a,i){return '<label class="mu"><input type="checkbox" class="ca" value="'+i+'"'+((f.addrs||[]).indexOf(i)>-1?' checked':'')+'> '+esc(a.t||a.a.slice(0,30))+(a.on?'':' (غیرفعال)')+'</label><br>'}).join("")||'<span class="mu">اول در تب آدرس‌ها آدرس ثبت کن.</span>'}
+function adc(x){var a=(x.addrs||[]).map(function(i){return(C0.addrs||[])[i]}).filter(Boolean);return a.length?'<div class="c"><h2>آدرس مراجعه</h2>'+a.map(function(y){return '<div class="row"><div>'+(y.t?'<b>'+esc(y.t)+'</b>':'')+'<small>'+esc(y.a)+'</small></div></div>'}).join("")+'</div>':''}
+function tR(){
+ var ls=D.addrs.map(function(a,i){return '<div class="row"><div><b>'+esc(a.t||"آدرس "+(i+1))+'</b>'+(a.on?'':' <span class="er">(غیرفعال)</span>')+'<small>'+esc(a.a)+'</small></div><div><button class="g" onclick="D.addrs['+i+'].on=!D.addrs['+i+'].on;sv();A()">'+(a.on?'غیرفعال':'فعال')+'</button> <button class="d" onclick="dA('+i+')">حذف</button></div></div>'}).join("")||'<p class="mu">آدرسی ثبت نشده.</p>';
+ return '<div class="c"><h2>آدرس‌های مراجعه</h2>'+ls+'<input id="at" placeholder="عنوان (مثلاً شعبه مرکزی) — اختیاری"><textarea id="aa" rows="2" placeholder="آدرس کامل"></textarea><button onclick="adA()">افزودن آدرس</button><p class="mu">بعد از ثبت، در بخش هر خدمت انتخاب کن این خدمت در کدام آدرس‌ها انجام می‌شود.</p></div>';
+}
+function adA(){var a=$("aa").value.trim();if(!a){alert("آدرس را وارد کن.");return}D.addrs.push({t:$("at").value.trim(),a:a,on:true});sv();A()}
+function dA(i){if(!confirm("حذف شود؟"))return;D.addrs.splice(i,1);D.services.forEach(function(x){x.addrs=(x.addrs||[]).filter(function(j){return j!==i}).map(function(j){return j>i?j-1:j})});sv();A()}
+function dK(i){D.cards.splice(i,1);D.services.forEach(function(x){x.cards=(x.cards||[]).filter(function(j){return j!==i}).map(function(j){return j>i?j-1:j})});sv();A()}
 function eff(){return td()>D.last?td():D.last}
 function left(){if(!D.act)return 0;var a=new Date(D.act.start+"T12:00:00"),b=new Date(eff()+"T12:00:00");return D.act.days-Math.floor((b-a)/864e5)}
 function actv(){return left()>0}
@@ -68,28 +86,29 @@ function dtx(x){if(!x.dt||x.dt==="none"||!x.dv)return"";return(x.dt==="pct"?x.dv
 function plat(p){return{rubika:"روبیکا",eitaa:"ایتا",wa:"واتس‌اپ",tg:"تلگرام",ig:"اینستاگرام",web:"وب‌سایت"}[p]||p}
 
 function head(){
- return '<h1>'+esc(D.name||"پنل سالن")+'</h1><p class="'+(actv()?'ok':'er')+'">'+(actv()?'اشتراک فعال · '+left().toLocaleString("fa-IR")+' روز باقی‌مانده':'اشتراک فعال نیست')+'</p>'+
- '<div class="ch">'+[["s","خدمات"],["k","کارت‌ها"],["l","لینک‌ها"],["h","ساعت‌ها"],["a","اشتراک"],["x","اشتراک‌گذاری"],["b","پشتیبان"]].map(function(t){return '<button class="'+(tab===t[0]?'on':'')+'" onclick="tab=\''+t[0]+'\';F=null;A()">'+t[1]+'</button>'}).join("")+'</div>';
+ var end=D.act?addD(D.act.start,D.act.days):"",st=actv()?'<div class="ok"><b>● فعال</b></div><div class="mu">پایان: '+fdl(end)+'</div>':'<div class="er"><b>غیرفعال</b></div>';
+ return '<div class="r" style="align-items:center"><h1 id="hn" style="flex:1">'+esc(dname()||"پنل سالن")+'</h1><div style="flex:0 0 auto;text-align:left">'+st+'</div></div>'+
+ '<div class="ch">'+[["s","خدمات"],["r","آدرس‌ها"],["k","کارت‌ها"],["l","لینک‌ها"],["h","ساعت‌ها"],["a","اشتراک"],["x","اشتراک‌گذاری"],["b","پشتیبان"]].map(function(t){return '<button class="'+(tab===t[0]?'on':'')+'" onclick="tab=\''+t[0]+'\';F=null;A()">'+t[1]+'</button>'}).join("")+'</div>';
 }
 function A(){
  var lock=!actv()&&"a,b".indexOf(tab)<0;
- var body=lock?'<div class="c er">برای استفاده از این بخش، اشتراک را فعال کن.</div>':({s:tS,k:tK,l:tL,h:tH,a:tA,x:tX,b:tB})[tab]();
+ var body=lock?'<div class="c er">برای استفاده از این بخش، اشتراک را فعال کن.</div>':({s:tS,r:tR,k:tK,l:tL,h:tH,a:tA,x:tX,b:tB})[tab]();
  app.innerHTML=head()+body;
  if(tab==="a"&&!PL)loadPlans();
 }
 function tS(){
- var f=F||{id:null,n:"",price:"",min:"",dep:"",note:"",dt:"none",dv:"",from:"",to:"",steps:[],cards:[],on:true};
+ var f=F||{id:null,n:"",price:"",min:"",dep:"",note:"",dt:"none",dv:"",from:"",to:"",steps:[],cards:[],addrs:[],on:true};
  var ls=D.services.map(function(x){return '<div class="row"><div><b>'+esc(x.n)+'</b>'+(x.on?'':' <span class="er">(غیرفعال)</span>')+'<small>'+fm(x.price)+' · '+x.min.toLocaleString("fa-IR")+' دقیقه · بیعانه '+fm(x.dep)+(dtx(x)?' · '+dtx(x):'')+'</small></div><div><button class="g" onclick="eS(\''+x.id+'\')">ویرایش</button> <button class="g" onclick="tgS(\''+x.id+'\')">'+(x.on?'غیرفعال':'فعال')+'</button> <button class="d" onclick="dS(\''+x.id+'\')">حذف</button></div></div>'}).join("")||'<p class="mu">خدمتی ثبت نشده.</p>';
  var st=f.steps.map(function(s,i){return '<div class="r"><input class="stp" value="'+esc(s)+'" placeholder="مرحله '+(i+1)+'"><button class="d" style="flex:0" onclick="rmSt('+i+')">✕</button></div>'}).join("");
  var cd=D.cards.map(function(c,i){return '<label class="mu"><input type="checkbox" class="cc" value="'+i+'"'+(f.cards.indexOf(i)>-1?' checked':'')+'> '+esc(c.b)+' · '+esc(c.num)+'</label><br>'}).join("")||'<span class="mu">اول در بخش کارت‌ها کارت ثبت کن.</span>';
  return '<div class="c"><h2>خدمات ثبت‌شده</h2>'+ls+'</div><div class="c"><h2>'+(f.id?'ویرایش خدمت':'ثبت خدمت')+'</h2>'+
- '<input id="sn" placeholder="عنوان خدمت" value="'+esc(f.n)+'"><div class="r"><input id="sp" inputmode="numeric" placeholder="مبلغ کل (ریال)" value="'+(f.price||"")+'"><input id="sm" inputmode="numeric" placeholder="زمان تقریبی (دقیقه)" value="'+(f.min||"")+'"></div><input id="sd" inputmode="numeric" placeholder="مبلغ بیعانه (ریال)" value="'+(f.dep||"")+'">'+
+ '<input id="sn" placeholder="عنوان خدمت" value="'+esc(f.n)+'"><div class="r"><input id="sp" inputmode="numeric" placeholder="مبلغ کل (ریال)" value="'+fv(f.price)+'" oninput="fi(this)"><input id="sm" inputmode="numeric" placeholder="زمان تقریبی (دقیقه)" value="'+(f.min||"")+'"></div><input id="sd" inputmode="numeric" placeholder="مبلغ بیعانه (ریال)" value="'+fv(f.dep)+'" oninput="fi(this)">'+
  '<h2 style="margin-top:8px">پلن کاری</h2>'+st+'<button class="g" onclick="adSt()">+ افزودن مرحله</button>'+
  '<textarea id="sx" rows="2" placeholder="توضیح تکمیلی (مثلاً حوله همراه داشته باشید)">'+esc(f.note)+'</textarea>'+
- '<h2>تخفیف</h2><div class="r"><select id="st"><option value="none">بدون تخفیف</option><option value="pct"'+(f.dt==="pct"?' selected':'')+'>درصدی</option><option value="fix"'+(f.dt==="fix"?' selected':'')+'>مبلغ ثابت (ریال)</option></select><input id="sv" inputmode="numeric" placeholder="مقدار" value="'+(f.dv||"")+'"></div><div class="r"><div><span class="mu">شروع</span><input id="sf" type="date" value="'+f.from+'"></div><div><span class="mu">پایان</span><input id="se" type="date" value="'+f.to+'"></div></div>'+
- '<h2>کارت‌های این خدمت</h2>'+cd+'<button onclick="svS()">'+(f.id?'ذخیره تغییرات':'ثبت خدمت')+'</button>'+(f.id?' <button class="g" onclick="F=null;A()">انصراف</button>':'')+'</div>';
+ '<h2>تخفیف</h2><div class="r"><select id="st"><option value="none">بدون تخفیف</option><option value="pct"'+(f.dt==="pct"?' selected':'')+'>درصدی</option><option value="fix"'+(f.dt==="fix"?' selected':'')+'>مبلغ ثابت (ریال)</option></select><input id="sv" inputmode="numeric" placeholder="مقدار (درصد یا ریال)" value="'+fv(f.dv)+'" oninput="fi(this)"></div><div class="r"><div><span class="mu">شروع</span><input id="sf" type="date" value="'+f.from+'"></div><div><span class="mu">پایان</span><input id="se" type="date" value="'+f.to+'"></div></div>'+
+ '<h2>کارت‌های این خدمت</h2>'+cd+'<h2>آدرس‌های این خدمت</h2>'+adr(f)+'<button onclick="svS()">'+(f.id?'ذخیره تغییرات':'ثبت خدمت')+'</button>'+(f.id?' <button class="g" onclick="F=null;A()">انصراف</button>':'')+'</div>';
 }
-function rd(){return{id:F&&F.id,n:$("sn").value.trim(),price:nu("sp"),min:nu("sm"),dep:nu("sd"),note:$("sx").value,dt:$("st").value,dv:nu("sv"),from:$("sf").value,to:$("se").value,steps:[].map.call(document.querySelectorAll(".stp"),function(i){return i.value}),cards:[].filter.call(document.querySelectorAll(".cc"),function(i){return i.checked}).map(function(i){return+i.value}),on:F?F.on:true}}
+function rd(){return{id:F&&F.id,n:$("sn").value.trim(),price:nu("sp"),min:nu("sm"),dep:nu("sd"),note:$("sx").value,dt:$("st").value,dv:nu("sv"),from:$("sf").value,to:$("se").value,steps:[].map.call(document.querySelectorAll(".stp"),function(i){return i.value}),cards:[].filter.call(document.querySelectorAll(".cc"),function(i){return i.checked}).map(function(i){return+i.value}),addrs:[].filter.call(document.querySelectorAll(".ca"),function(i){return i.checked}).map(function(i){return+i.value}),on:F?F.on:true}}
 function adSt(){F=rd();F.steps.push("");A()}
 function rmSt(i){F=rd();F.steps.splice(i,1);A()}
 function svS(){var o=rd();if(!o.n||!o.price){alert("عنوان و مبلغ کل را وارد کن.");return}o.steps=o.steps.filter(Boolean);
@@ -99,7 +118,7 @@ function tgS(i){D.services.forEach(function(x){if(x.id===i)x.on=!x.on});sv();A()
 function dS(i){if(confirm("حذف شود؟")){D.services=D.services.filter(function(x){return x.id!==i});sv();A()}}
 
 function tK(){
- var ls=D.cards.map(function(c,i){return '<div class="row"><div><b>'+esc(c.h)+'</b> · '+esc(c.b)+'<small>'+esc(c.num)+(c.on?'':' (غیرفعال)')+'</small></div><div><button class="g" onclick="D.cards['+i+'].on=!D.cards['+i+'].on;sv();A()">'+(c.on?'غیرفعال':'فعال')+'</button> <button class="d" onclick="D.cards.splice('+i+',1);sv();A()">حذف</button></div></div>'}).join("")||'<p class="mu">کارتی ثبت نشده.</p>';
+ var ls=D.cards.map(function(c,i){return '<div class="row"><div><b>'+esc(c.h)+'</b> · '+esc(c.b)+'<small>'+esc(c.num)+(c.on?'':' (غیرفعال)')+'</small></div><div><button class="g" onclick="D.cards['+i+'].on=!D.cards['+i+'].on;sv();A()">'+(c.on?'غیرفعال':'فعال')+'</button> <button class="d" onclick="dK('+i+')">حذف</button></div></div>'}).join("")||'<p class="mu">کارتی ثبت نشده.</p>';
  return '<div class="c"><h2>کارت‌های بانکی (تا ۳ کارت)</h2>'+ls+(D.cards.length<3?'<input id="kh" placeholder="نام و نام خانوادگی صاحب کارت"><input id="kb" placeholder="نام بانک"><input id="kn" inputmode="numeric" placeholder="شماره کارت"><button onclick="adK()">افزودن کارت</button>':'')+'<p class="mu">در ثبت هر خدمت، انتخاب می‌کنی کدام کارت‌ها نمایش داده شوند.</p></div>';
 }
 function adK(){var h=$("kh").value.trim(),b=$("kb").value.trim(),n=en($("kn").value);if(!h||!b||n.length<16){alert("همه فیلدها و شماره کارت ۱۶ رقمی را وارد کن.");return}D.cards.push({h:h,b:b,num:n.replace(/(\d{4})(?=\d)/g,"$1 "),on:true});sv();A()}
@@ -122,13 +141,13 @@ function gen(){var a=$("ha").value.split(":"),b=$("hb").value.split(":"),st=nu("
 function loadPlans(){fetch("plans.json?"+Date.now()).then(function(r){return r.json()}).then(function(j){PL=j.plans||[];MG=j.mgr||{};if(j.pub&&!PUB){PUB=j.pub;try{localStorage.setItem("pub",JSON.stringify(PUB))}catch(e){}}A()}).catch(function(){PL=[];A()})}
 function tA(){
  var x=SP&&(PL||[]).filter(function(p){return p.id===SP})[0],cs=MG.cards||[],c=MG.c||{};
- var pl=(PL||[]).map(function(p){var f=fp(p);return '<div class="row"><div><b>'+esc(p.n)+'</b><small>'+p.days.toLocaleString("fa-IR")+' روز'+(dtx(p)?' · '+dtx(p):'')+'</small></div><div style="text-align:center"><b>'+fm(f)+'</b><br><button class="'+(SP===p.id?'on':'')+'" onclick="selP(\''+p.id+'\')">انتخاب</button></div></div>'}).join("")||'<p class="mu">'+(PL?'پلنی در دسترس نیست.':'در حال دریافت پلن‌ها...')+'</p>';
+ var pl=(PL||[]).map(function(p){var f=fp(p);return '<div class="row"><div><b>'+esc(p.n)+'</b><small>'+p.days.toLocaleString("fa-IR")+' روز'+(dtx(p)?' · '+dtx(p):'')+'</small></div><div style="text-align:center">'+(f<p.price?'<s class="mu">'+fm(p.price)+'</s><br>':'')+'<b>'+fm(f)+'</b><br><button class="'+(SP===p.id?'on':'')+'" onclick="selP(\''+p.id+'\')">انتخاب</button></div></div>'}).join("")||'<p class="mu">'+(PL?'پلنی در دسترس نیست.':'در حال دریافت پلن‌ها...')+'</p>';
  var ch=[["sms","پیامک"],["wa","واتس‌اپ"],["eitaa","ایتا"],["rubika","روبیکا"],["tg","تلگرام"]].filter(function(k){return c[k[0]]}).map(function(k,i){return '<button class="'+(i?'g':'')+'" onclick="sendP(\''+k[0]+'\')">ارسال با '+k[1]+'</button>'}).join("");
- var pay=x?'<div class="c"><h2>پرداخت: '+esc(x.n)+'</h2><p>مبلغ قابل پرداخت: <b>'+fm(fp(x))+'</b></p><p class="mu">مبلغ را کارت‌به‌کارت کن، سپس سه کادر پایین را پر کن.</p>'+
+ var pay=x?'<div class="c"><h2>پرداخت: '+esc(x.n)+'</h2><p>مبلغ قابل پرداخت: '+(fp(x)<x.price?'<s class="mu">'+fm(x.price)+'</s> ':'')+'<b>'+fm(fp(x))+'</b></p><p class="mu">مبلغ را کارت‌به‌کارت کن، سپس سه کادر پایین را پر کن.</p>'+
   (cs.map(function(k){return '<div class="row"><div><b>'+esc(k.h)+'</b> · '+esc(k.b)+'<small class="ltr">'+esc(k.num)+'</small></div><button class="g" onclick="cp(this)" data-t="'+esc(en(k.num))+'">کپی</button></div>'}).join("")||'<p class="er">مدیر هنوز کارتی ثبت نکرده.</p>')+
-  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(PV.pa||"")+'" oninput="PV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(PV.pd||"")+'" oninput="PV.pd=this.value"><input id="ph2" placeholder="ساعت واریز" value="'+esc(PV.pt||"")+'" oninput="PV.pt=this.value"></div><p class="mu">کد دستگاه ('+D.dev+') خودکار همراه پیام ارسال می‌شود.</p><div class="ch">'+(ch||'<span class="er">مدیر راه تماسی تعریف نکرده.</span>')+'</div><p id="pm" class="mu"></p></div>':'';
+  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(PV.pa||"")+'" oninput="fi(this);PV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(PV.pd||"")+'" oninput="PV.pd=this.value"><input id="ph2" placeholder="ساعت واریز" value="'+esc(PV.pt||"")+'" oninput="PV.pt=this.value"></div><p class="mu">کد دستگاه ('+D.dev+') خودکار همراه پیام ارسال می‌شود.</p><div class="ch">'+(ch||'<span class="er">مدیر راه تماسی تعریف نکرده.</span>')+'</div><p id="pm" class="mu"></p></div>':'';
  var pend=D.pend?'<div class="c"><h2 class="ok">درخواست ارسال شد</h2><p>پلن «'+esc(D.pend.plan)+'» · '+fm(D.pend.price)+'<br>منتظر تأیید مدیر و کد فعال‌سازی هستی. کد را پایین وارد کن.</p><button class="g" onclick="D.pend=null;sv();A()">لغو / ارسال دوباره</button></div>':'';
- return '<div class="c"><h2>کد دستگاه</h2><p style="font-size:24px;letter-spacing:3px;margin:4px 0"><b>'+D.dev+'</b></p></div>'+pend+
+ return profile()+'<div class="c"><h2>کد دستگاه</h2><p style="font-size:24px;letter-spacing:3px;margin:4px 0"><b>'+D.dev+'</b></p></div>'+pend+
  '<div class="c"><h2>پلن‌های اشتراک</h2>'+pl+'</div>'+pay+
  '<div class="c"><h2>کد فعال‌سازی</h2><textarea id="ac" class="ltr" rows="3" placeholder="کد را اینجا بچسبان"></textarea><button onclick="act()">فعال‌سازی</button><p id="am" class="mu"></p></div>';
 }
@@ -137,7 +156,7 @@ function sendP(t){
  var x=(PL||[]).filter(function(p){return p.id===SP})[0],m=$("pm"),c=MG.c||{};
  if(!x)return;
  if(!PV.pa||!PV.pd||!PV.pt){m.textContent="مبلغ، تاریخ و ساعت واریز را کامل کن.";return}
- var txt="درخواست اشتراک\nکد دستگاه: "+D.dev+"\nپلن: "+x.n+" ("+x.days+" روز)\nمبلغ پلن: "+fm(fp(x))+"\nمبلغ واریزی: "+PV.pa+"\nتاریخ واریز: "+PV.pd+"\nساعت واریز: "+PV.pt+(D.name?"\nسالن: "+D.name:""),e=encodeURIComponent,num=String(c[t]).replace(/\D/g,"");
+ var txt="درخواست اشتراک\nکد دستگاه: "+D.dev+"\nپلن: "+x.n+" ("+x.days+" روز)\nمبلغ پلن: "+fm(fp(x))+"\nمبلغ واریزی: "+PV.pa+"\nتاریخ واریز: "+PV.pd+"\nساعت واریز: "+PV.pt+(dname()?"\nسالن: "+dname():""),e=encodeURIComponent,num=String(c[t]).replace(/\D/g,"");
  D.pend={plan:x.n,price:fp(x),t:td()};sv();
  if(t==="sms")location.href="sms:"+num+"?body="+e(txt);
  else if(t==="wa")window.open("https://wa.me/98"+num.replace(/^0/,"")+"?text="+e(txt));
@@ -159,14 +178,13 @@ function act(){
  }catch(e){m.textContent="کد معتبر نیست."}
 }
 
-function pub(){return{name:D.name,phone:D.phone,services:D.services.filter(function(x){return x.on}),cards:D.cards.filter(function(c){return c.on}),links:D.links,days:D.days}}
+function pub(){return{name:dname(),phone:D.phone,services:D.services.filter(function(x){return x.on}),cards:D.cards.map(function(c){return c.on?c:null}),addrs:D.addrs.map(function(c){return c.on?c:null}),links:D.links,days:D.days}}
 function lk(){return location.href.split("#")[0]+"#"+enc(pub())}
 function tX(){
- return '<div class="c"><h2>اطلاعات سالن</h2><input id="nm" placeholder="نام سالن" value="'+esc(D.name)+'" oninput="D.name=this.value;sv()"><input id="ph" inputmode="tel" class="ltr" placeholder="موبایل سالن (09...)" value="'+esc(D.phone)+'" oninput="D.phone=this.value;sv()"></div>'+
- '<div class="c"><h2>لینک مشتری</h2><button onclick="mkL()">ساخت لینک و QR</button> <button class="g" onclick="mode=\'c\';C0=pub();sel={s:null,d:null,t:null,pt:\'dep\'};C()">پیش‌نمایش</button><div id="lo"></div></div>';
+ return '<div class="c"><h2>لینک مشتری</h2><button onclick="mkL()">ساخت لینک و QR</button> <button class="g" onclick="mode=\'c\';C0=pub();sel={s:null,d:null,t:null,pt:\'dep\'};C()">پیش‌نمایش</button><div id="lo"></div></div>';
 }
-function mkL(){var u=lk(),t=(D.name?D.name+": ":"")+"رزرو نوبت از این لینک:\n"+u,e=encodeURIComponent;
- $("lo").innerHTML='<div class="ltr" style="max-height:60px;overflow:auto;margin:8px 0">'+esc(u)+'</div><div class="ch"><button class="g" onclick="location.href=\'sms:?body='+e(t)+'\'">پیامک</button><button class="g" onclick="window.open(\'https://wa.me/?text='+e(t)+'\')">واتس‌اپ</button><button class="g" onclick="window.open(\'https://t.me/share/url?url='+e(u)+'&text='+e(D.name||"")+'\')">تلگرام</button><button class="g" onclick="window.open(\'https://eitaa.com/share/url?url='+e(u)+'&text='+e(D.name||"")+'\')">ایتا</button><button class="g" onclick="cp(this)" data-t="'+esc(u)+'">کپی (روبیکا)</button></div><div id="qr"></div><p class="mu" id="qm"></p><hr style="border:0;border-top:1px solid var(--bd)"><p class="mu">معرفی برنامه به دوستان:</p><button class="g" onclick="window.open(\'https://wa.me/?text='+e("برنامه نوبت‌دهی سالن: "+location.href.split("#")[0])+'\')">ارسال با واتس‌اپ</button> <button class="g" onclick="cp(this)" data-t="'+esc(location.href.split("#")[0])+'">کپی لینک برنامه</button>';
+function mkL(){var u=lk(),t=(dname()?dname()+": ":"")+"رزرو نوبت از این لینک:\n"+u,e=encodeURIComponent;
+ $("lo").innerHTML='<div class="ltr" style="max-height:60px;overflow:auto;margin:8px 0">'+esc(u)+'</div><div class="ch"><button class="g" onclick="location.href=\'sms:?body='+e(t)+'\'">پیامک</button><button class="g" onclick="window.open(\'https://wa.me/?text='+e(t)+'\')">واتس‌اپ</button><button class="g" onclick="window.open(\'https://t.me/share/url?url='+e(u)+'&text='+e(dname()||"")+'\')">تلگرام</button><button class="g" onclick="window.open(\'https://eitaa.com/share/url?url='+e(u)+'&text='+e(dname()||"")+'\')">ایتا</button><button class="g" onclick="cp(this)" data-t="'+esc(u)+'">کپی (روبیکا)</button></div><div id="qr"></div><p class="mu" id="qm"></p><hr style="border:0;border-top:1px solid var(--bd)"><p class="mu">معرفی برنامه به دوستان:</p><button class="g" onclick="window.open(\'https://wa.me/?text='+e("برنامه نوبت‌دهی سالن: "+location.href.split("#")[0])+'\')">ارسال با واتس‌اپ</button> <button class="g" onclick="cp(this)" data-t="'+esc(location.href.split("#")[0])+'">کپی لینک برنامه</button>';
  try{new QRCode($("qr"),{text:u,width:170,height:170,correctLevel:QRCode.CorrectLevel.L})}catch(x){$("qr").style.display="none";$("qm").textContent="اطلاعات برای QR زیاد است؛ لینک را به‌جای آن بفرست."}}
 function cp(b){try{navigator.clipboard.writeText(b.dataset.t);b.textContent="کپی شد"}catch(e){}}
 
@@ -182,9 +200,9 @@ function C(){
  (!S.length?'<div class="c">فعلاً خدمتی تعریف نشده.</div>':
  '<div class="c"><h2>خدمت</h2><div class="ch">'+S.map(function(y,i){return '<button class="'+(sel.s===i?'on':'')+'" onclick="pk(\'s\','+i+')">'+esc(y.n)+'</button>'}).join("")+'</div>'+
  (x?'<p><b>'+fm(fp(x))+'</b>'+(fp(x)<x.price?' <s class="mu">'+fm(x.price)+'</s>':'')+' · '+x.min.toLocaleString("fa-IR")+' دقیقه · بیعانه '+fm(x.dep)+'</p>'+(dtx(x)?'<p class="ok">'+dtx(x)+'</p>':'')+(x.note?'<p class="mu">'+esc(x.note)+'</p>':'')+(x.steps&&x.steps.length?'<ol class="mu">'+x.steps.map(function(s){return '<li>'+esc(s)+'</li>'}).join("")+'</ol>':''):'')+'</div>'+
- '<div class="c"><h2>روز و ساعت</h2><div class="ch">'+dk.map(function(d){return '<button class="'+(sel.d===d?'on':'')+'" onclick="pk(\'d\',\''+d+'\')">'+fd(d)+'</button>'}).join("")+'</div>'+(sel.d?'<div class="ch">'+C0.days[sel.d].map(function(t){return '<button class="'+(sel.t===t?'on':'')+'" onclick="pk(\'t\',\''+t+'\')">'+t+'</button>'}).join("")+'</div>':'')+'</div>'+
+ (x?adc(x):'')+'<div class="c"><h2>روز و ساعت</h2><div class="ch">'+dk.map(function(d){return '<button class="'+(sel.d===d?'on':'')+'" onclick="pk(\'d\',\''+d+'\')">'+fd(d)+'</button>'}).join("")+'</div>'+(sel.d?'<div class="ch">'+C0.days[sel.d].map(function(t){return '<button class="'+(sel.t===t?'on':'')+'" onclick="pk(\'t\',\''+t+'\')">'+t+'</button>'}).join("")+'</div>':'')+'</div>'+
  (x?'<div class="c"><h2>واریز</h2><div class="ch"><button class="'+(sel.pt==="dep"?'on':'')+'" onclick="pk(\'pt\',\'dep\')">بیعانه</button><button class="'+(sel.pt==="full"?'on':'')+'" onclick="pk(\'pt\',\'full\')">مبلغ کل</button></div><p>مبلغ: <b>'+fm(sel.pt==="dep"?x.dep:fp(x))+'</b></p>'+(cd||'<p class="mu">کارتی نمایش داده نمی‌شود.</p>')+
- '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(cv("pa"))+'" oninput="CV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(cv("pd"))+'" oninput="CV.pd=this.value"><input id="pt" placeholder="ساعت واریز" value="'+esc(cv("pt"))+'" oninput="CV.pt=this.value"></div></div>':'')+
+ '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(cv("pa"))+'" oninput="fi(this);CV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(cv("pd"))+'" oninput="CV.pd=this.value"><input id="pt" placeholder="ساعت واریز" value="'+esc(cv("pt"))+'" oninput="CV.pt=this.value"></div></div>':'')+
  '<div class="c"><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value"><div class="ch"><button onclick="snd(\'sms\')">ارسال با پیامک</button><button onclick="snd(\'wa\')">واتس‌اپ</button><button class="g" onclick="snd(\'ei\')">ایتا</button><button class="g" onclick="snd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p></div>')+
  ((C0.links||[]).length?'<div class="c"><h2>ما را دنبال کنید</h2>'+C0.links.map(function(l){return '<div class="row"><div><b>'+esc(l.t)+'</b><small>'+plat(l.pl)+'</small></div><button class="g" onclick="window.open(\''+esc(l.u)+'\',\'_blank\')">عضویت / مشاهده</button></div>'}).join("")+'</div>':'');
 }
