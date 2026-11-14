@@ -1,5 +1,5 @@
 /* سرویس‌ورکر: اول شبکه، اگر نبود حافظه. هر انتشار جدید: عدد VERSION را زیاد کن. */
-const VERSION='salon-v3';
+const VERSION='salon-v4';
 const FILES=['./','index.html','admin-tool.html','app/app.css','app/qr-lib.js','app/jcal.js','app/util.js','app/salon.js','app/admin.js','manifest.json','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>Promise.all(FILES.map(f=>c.add(f).catch(()=>0)))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==VERSION).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
