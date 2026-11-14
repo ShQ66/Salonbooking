@@ -1,4 +1,4 @@
-/* پنل سالن + صفحه مشتری (نسخه ۳). داده‌ها فقط در مرورگر همین دستگاه (localStorage، کلید sal) می‌ماند. */
+/* پنل سالن + صفحه مشتری (نسخه ۴). داده‌ها فقط در مرورگر همین دستگاه (localStorage، کلید sal) می‌ماند. */
 var app=$("app");
 var DEF_MSG={
  ok:"سلام {name} عزیز\nنوبت شما برای «{service}» در {date} ساعت {time} تأیید شد.{addr}\n{salon}",
@@ -6,22 +6,22 @@ var DEF_MSG={
  rem:"سلام {name} عزیز\nیادآوری: نوبت «{service}» شما {date} ساعت {time} است.\n{salon}"
 };
 var THEMES=["#b4456b","#8e44ad","#2f6fb5","#1f8a5b","#c0392b","#d35400","#34495e","#00838f"];
-var D={name:"",fn:"",ln:"",nick:"",addrs:[],phone:"",services:[],cards:[],links:[],days:{},dev:rnd8(),codes:[],trial:null,last:td(),used:[],
- ap:[],cu:[],cn:{},closed:[],msg:{},theme:"",hs:{from:"09:00",to:"18:00",step:60,n:14,wd:[1,1,1,1,1,1,0]}};
+var D={name:"",fn:"",ln:"",nick:"",addrs:[],phone:"",services:[],cards:[],links:[],days:{},logo:"",lside:"r",rv:[],gd:{},dev:rnd8(),codes:[],trial:null,last:td(),used:[],
+ ap:[],cu:[],cn:{},closed:[],msg:{},theme:"",hs:{from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]}};
 try{var s0=localStorage.getItem("sal");if(s0)D=Object.assign(D,JSON.parse(s0))}catch(e){}
-D.msg=D.msg||{};D.hs=Object.assign({from:"09:00",to:"18:00",step:60,n:14,wd:[1,1,1,1,1,1,0]},D.hs||{});
+D.msg=D.msg||{};D.hs=Object.assign({from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]},D.hs||{});D.gd=D.gd||{};D.rv=D.rv||[];
 function sv(){try{localStorage.setItem("sal",JSON.stringify(D))}catch(e){}}
 var PL=null,PUB=null,MG={},SP=null,PV={},TR=null,IP=null,ST={exp:"",kind:""},PK=null,AM=null,CM=null,CV={},C0=null;
 try{PUB=JSON.parse(localStorage.getItem("pub"))}catch(e){}
 var mode="a",sel={s:null,d:null,t:null,pt:"dep"};
 var hh=location.hash.slice(1);
-if(hh.length>10){try{C0=dec(hh);mode="c"}catch(e){}}
+var HASHP=hh.length>10?unzip(hh):null;
 if(D.last<td())D.last=td();
 function dname(){return D.nick||((D.fn||"")+" "+(D.ln||"")).trim()}
 if(dname()&&!D.fn&&!D.nick)D.nick=dname();
 function msgT(k){return D.msg[k]||DEF_MSG[k]}
 function setTheme(c){var s=document.documentElement.style;if(c){s.setProperty("--ac",c);s.setProperty("--acx","#fff");var m=document.querySelector('meta[name=theme-color]');if(m)m.content=c}else{s.removeProperty("--ac");s.removeProperty("--acx")}}
-setTheme(mode==="c"?(C0&&C0.th):D.theme);
+setTheme(D.theme);
 
 /* ================= اشتراک (امضای ECDSA؛ قالب کد با نسخه‌ی قبلی یکی است) ================= */
 function eff(){return td()>D.last?td():D.last}
@@ -62,7 +62,7 @@ function apRow(a){
  else if(a.st==="ok")b='<button onclick="apDone(\''+a.id+'\')">انجام شد</button> <button class="g" onclick="apMsg(\''+a.id+'\',\'rem\')">یادآوری</button> <button class="d" onclick="apCancel(\''+a.id+'\')">لغو نوبت</button>';
  else b='<button class="g" onclick="apMsg(\''+a.id+'\',\''+(a.st==="rej"?"rej":"ok")+'\')">پیام</button> <button class="d" onclick="apDel(\''+a.id+'\')">حذف</button>';
  var pay=a.amt?' · واریز '+fm(en(a.amt)*1||0):'';
- return '<div class="row" style="align-items:flex-start"><div><b>'+esc(a.name||"—")+'</b> · '+esc(a.sn)+' <span class="st-'+a.st+'">('+stName(a.st)+')</span><small>'+fd(a.date)+' · '+esc(a.time)+(a.phone?' · <span class="ltr">'+esc(a.phone)+'</span>':'')+pay+(a.pd?' · '+esc(a.pd)+' '+esc(a.ptm||""):'')+'</small><div class="ch" style="margin:4px 0">'+b+'</div></div></div>';
+ return '<div class="row" style="align-items:flex-start"><div><b>'+esc(a.name||"—")+'</b> · '+esc(a.sn)+' <span class="st-'+a.st+'">('+stName(a.st)+')</span><small>'+fd(a.date)+' · '+esc(a.time)+(a.phone?' · <span class="ltr">'+esc(a.phone)+'</span>':'')+pay+(a.pd?' · '+(/^\d{4}-\d\d-\d\d$/.test(a.pd)?fdl(a.pd):esc(a.pd))+' '+esc(a.ptm||""):'')+'</small><div class="ch" style="margin:4px 0">'+b+'</div></div></div>';
 }
 function msgBox(){
  if(!AM)return"";
@@ -148,11 +148,12 @@ function tCal(){
  ["ش","ی","د","س","چ","پ","ج"].forEach(function(w){cells+='<div class="h">'+w+'</div>'});
  for(i=0;i<off;i++)cells+='<div></div>';
  for(i=1;i<=len;i++){
-  var iso=J.isoOfJ(CM.y,CM.m,i),n=D.ap.filter(function(a){return a.date===iso&&(a.st==="ok"||a.st==="new")}).length,cl=D.closed.indexOf(iso)>-1;
-  cells+='<button class="'+(iso===td()?'today ':'')+(iso===CM.sel?'sel ':'')+(cl?'off':'')+'" onclick="CM.sel=\''+iso+'\';A()">'+J.fa(i)+(n?'<i>'+J.fa(n)+' نوبت</i>':cl?'<i>تعطیل</i>':'')+'</button>';
+  var iso=J.isoOfJ(CM.y,CM.m,i),cl=D.closed.indexOf(iso)>-1,c1=0,c2=0,c3=0;
+  D.ap.forEach(function(a){if(a.date===iso){if(a.st==="new")c1++;else if(a.st==="ok")c2++;else if(a.st==="done")c3++}});
+  cells+='<button class="'+(iso===td()?'today ':'')+(iso===CM.sel?'sel ':'')+(cl?'off':'')+'" onclick="CM.sel=\''+iso+'\';A()">'+J.fa(i)+'<span class="cn">'+(c1?'<b class="a1">'+J.fa(c1)+'</b>':'')+(c2?'<b class="a2">'+J.fa(c2)+'</b>':'')+(c3?'<b class="a3">'+J.fa(c3)+'</b>':'')+(cl?'<b class="a4">×</b>':'')+'</span></button>';
  }
  var s=CM.sel,ls=D.ap.filter(function(a){return a.date===s&&a.st!=="rej"}).sort(function(a,b){return a.time<b.time?-1:1}),free=(D.days[s]||[]).length,cl=D.closed.indexOf(s)>-1;
- return box("",'<div class="r" style="align-items:center"><button class="g" onclick="cmv(-1)">‹ قبلی</button><b style="text-align:center">'+J.JM[CM.m-1]+' '+J.fa(CM.y)+'</b><button class="g" onclick="cmv(1)">بعدی ›</button></div><div class="cal" style="margin-top:8px">'+cells+'</div>')+
+ return box("",'<div class="r" style="align-items:center"><button class="g" onclick="cmv(-1)">‹ قبلی</button><b style="text-align:center">'+J.JM[CM.m-1]+' '+J.fa(CM.y)+'</b><button class="g" onclick="cmv(1)">بعدی ›</button></div><div class="cal" style="margin-top:8px">'+cells+'</div><div class="lgd"><span><b class="a1"></b>منتظر تأیید</span><span><b class="a2"></b>تأییدشده</span><span><b class="a3"></b>انجام‌شده</span><span><b class="a4"></b>تعطیل</span></div><p class="mu" style="margin:6px 0 0">عدد داخل هر رنگ = تعداد نوبت آن روز.</p>')+
  msgBox()+box("",'<h2>'+fdw(s)+'</h2><p class="mu">'+(cl?'روز تعطیل است':'ساعت خالی: '+fn(free))+'</p>'+(ls.map(apRow).join("")||'<p class="mu">نوبتی نیست.</p>')+'<button class="g" onclick="'+(cl?"openDay":"closeDay")+'(\''+s+'\')">'+(cl?'باز کردن این روز':'تعطیل کردن این روز')+'</button>');
 }
 function cmv(n){CM.m+=n;if(CM.m>12){CM.m=1;CM.y++}if(CM.m<1){CM.m=12;CM.y--}A()}
@@ -161,49 +162,62 @@ function closeDay(d){
  if(n&&!confirm(n+" نوبت در این روز ثبت است. فقط ساعت‌های خالی بسته می‌شود؛ نوبت‌ها را خودت لغو کن. ادامه؟"))return;
  if(D.closed.indexOf(d)<0)D.closed.push(d);delete D.days[d];sv();A();
 }
-function openDay(d){D.closed=D.closed.filter(function(x){return x!==d});sv();A()}
+function openDay(d){D.closed=D.closed.filter(function(x){return x!==d});delete D.gd[d];autoGen();sv();A()}
 
 /* ================= خدمات ================= */
 function tSvList(){
- var ls=D.services.map(function(x){return '<div class="row"><div><b>'+esc(x.n)+'</b>'+(x.on?'':' <span class="er">(غیرفعال)</span>')+'<small>'+fm(x.price)+' · '+fn(x.min||0)+' دقیقه · بیعانه '+fm(x.dep||0)+(dtx(x)?' · '+dtx(x):'')+'</small></div><div><button class="g" onclick="eS(\''+x.id+'\')">ویرایش</button> <label class="mu"><input type="checkbox"'+(x.on?' checked':'')+' onchange="tgS(\''+x.id+'\')"> فعال</label> <button class="d" onclick="dS(\''+x.id+'\')">حذف</button></div></div>'}).join("")||'<p class="mu">خدمتی ثبت نشده.</p>';
+ var ls=D.services.map(function(x){return '<div class="row"><div><b>'+esc(x.n)+'</b>'+(x.on?'':' <span class="er">(غیرفعال)</span>')+'<small>'+fm(x.price)+' · '+fn(x.min||0)+' دقیقه · بیعانه '+fm(x.dep||0)+(dtx(x)?' · '+dtx(x):'')+(x.wp?' · پلن کاری ویژه':'')+'</small></div><div><button class="g" onclick="eS(\''+x.id+'\')">ویرایش</button> <label class="mu"><input type="checkbox"'+(x.on?' checked':'')+' onchange="tgS(\''+x.id+'\')"> فعال</label> <button class="d" onclick="dS(\''+x.id+'\')">حذف</button></div></div>'}).join("")||'<p class="mu">خدمتی ثبت نشده.</p>';
  return box("",ls);
 }
 function tSvNew(){
- var f=F||{id:null,n:"",price:"",min:"",dep:"",note:"",dt:"none",dv:"",from:"",to:"",steps:[],cards:[],addrs:[],on:true};
+ var f=F||{id:null,n:"",price:"",min:"",dep:"",note:"",dt:"none",dv:"",from:"",to:"",steps:[],cards:[],addrs:[],wp:false,on:true};
+ var wdv=f.wd||[1,1,1,1,1,1,1];
  var st=f.steps.map(function(s,i){return '<div class="r"><input class="stp" value="'+esc(s)+'" placeholder="مرحله '+fn(i+1)+'"><button class="d" style="flex:0" onclick="rmSt('+i+')">✕</button></div>'}).join("");
  var cd=D.cards.map(function(c,i){return '<label class="mu"><input type="checkbox" class="cc" value="'+i+'"'+(f.cards.indexOf(i)>-1?' checked':'')+'> '+esc(c.b)+' · '+esc(c.num)+'</label><br>'}).join("")||'<span class="mu">اول در تنظیمات ← پرداخت از مشتری، کارت ثبت کن.</span>';
  return box("",'<h2>'+(f.id?'ویرایش خدمت':'ثبت خدمت')+'</h2><input id="sn" placeholder="عنوان خدمت" value="'+esc(f.n)+'"><div class="r"><input id="sp" inputmode="numeric" placeholder="مبلغ کل (ریال)" value="'+fv(f.price)+'" oninput="fi(this)"><input id="sm" inputmode="numeric" placeholder="زمان تقریبی (دقیقه)" value="'+(f.min||"")+'"></div><input id="sd" inputmode="numeric" placeholder="مبلغ بیعانه (ریال)" value="'+fv(f.dep)+'" oninput="fi(this)">'+
- '<h2 style="margin-top:8px">پلن کاری</h2>'+st+'<button class="g" onclick="adSt()">+ افزودن مرحله</button><textarea id="sx" rows="2" placeholder="توضیح تکمیلی (مثلاً حوله همراه داشته باشید)">'+esc(f.note)+'</textarea>'+
+ '<h2 style="margin-top:8px">تخصیص پلن کاری (ساعت‌های کاری)</h2><label class="mu"><input type="checkbox" id="wpa"'+(f.wp?'':' checked')+' onchange="$(\'wpb\').style.display=this.checked?\'none\':\'block\'"> همه‌ی ساعت‌های کاری ثبت‌شده‌ی من (پیش‌فرض)</label><div id="wpb" style="display:'+(f.wp?'block':'none')+'"><p class="mu">فقط در این روزها و ساعت‌ها برای این خدمت نوبت داده شود:</p><div>'+J.WD.map(function(w,i){return '<label class="mu"><input type="checkbox" class="sw" value="'+i+'"'+(wdv[i]?' checked':'')+'> '+w+'</label>'}).join(" ")+'</div><div class="r"><div><span class="mu">از ساعت</span><input id="wf" type="time" value="'+(f.hf||"")+'"></div><div><span class="mu">تا ساعت</span><input id="wt" type="time" value="'+(f.ht||"")+'"></div></div></div>'+
+ '<h2 style="margin-top:8px">مراحل انجام خدمت (اختیاری)</h2>'+st+'<button class="g" onclick="adSt()">+ افزودن مرحله</button><textarea id="sx" rows="2" placeholder="توضیح تکمیلی (مثلاً حوله همراه داشته باشید)">'+esc(f.note)+'</textarea>'+
  '<h2>تخفیف</h2><div class="r"><select id="st"><option value="none">بدون تخفیف</option><option value="pct"'+(f.dt==="pct"?' selected':'')+'>درصدی</option><option value="fix"'+(f.dt==="fix"?' selected':'')+'>مبلغ ثابت (ریال)</option></select><input id="sv" inputmode="numeric" placeholder="مقدار (درصد یا ریال)" value="'+fv(f.dv)+'" oninput="fi(this)"></div><span class="mu">شروع تخفیف (اختیاری)</span>'+jd("sf",f.from)+'<span class="mu">پایان تخفیف (اختیاری)</span>'+jd("se",f.to)+
- '<h2 style="margin-top:8px">کارت‌های این خدمت</h2>'+cd+'<h2>آدرس‌های این خدمت</h2>'+adr(f)+'<button onclick="svS()">'+(f.id?'ذخیره تغییرات':'ثبت خدمت')+'</button>'+(f.id?' <button class="g" onclick="go(\'s\',\'sv\',\'svl\')">انصراف</button>':''));
+ '<h2 style="margin-top:8px">تخصیص شماره کارت بانکی جهت واریز</h2>'+cd+'<h2>تخصیص آدرس محل خدمت</h2>'+adr(f)+'<button onclick="svS()">'+(f.id?'ذخیره تغییرات':'ثبت خدمت')+'</button>'+(f.id?' <button class="g" onclick="go(\'s\',\'sv\',\'svl\')">انصراف</button>':''));
 }
 function adr(f){return D.addrs.map(function(a,i){return '<label class="mu"><input type="checkbox" class="ca" value="'+i+'"'+((f.addrs||[]).indexOf(i)>-1?' checked':'')+'> '+esc(a.t||a.a.slice(0,30))+(a.on?'':' (غیرفعال)')+'</label><br>'}).join("")||'<span class="mu">اول در بخش آدرس‌ها آدرس ثبت کن.</span>'}
-function rd(){return{id:F&&F.id,n:$("sn").value.trim(),price:nu("sp"),min:nu("sm"),dep:nu("sd"),note:$("sx").value,dt:$("st").value,dv:nu("sv"),from:jv("sf"),to:jv("se"),steps:[].map.call(document.querySelectorAll(".stp"),function(i){return i.value}),cards:[].filter.call(document.querySelectorAll(".cc"),function(i){return i.checked}).map(function(i){return+i.value}),addrs:[].filter.call(document.querySelectorAll(".ca"),function(i){return i.checked}).map(function(i){return+i.value}),on:F?F.on:true}}
+function rd(){return{id:F&&F.id,n:$("sn").value.trim(),price:nu("sp"),min:nu("sm"),dep:nu("sd"),note:$("sx").value,dt:$("st").value,dv:nu("sv"),from:jv("sf"),to:jv("se"),steps:[].map.call(document.querySelectorAll(".stp"),function(i){return i.value}),cards:[].filter.call(document.querySelectorAll(".cc"),function(i){return i.checked}).map(function(i){return+i.value}),addrs:[].filter.call(document.querySelectorAll(".ca"),function(i){return i.checked}).map(function(i){return+i.value}),wp:!$("wpa").checked,wd:[0,1,2,3,4,5,6].map(function(i){var c=document.querySelector('.sw[value="'+i+'"]');return c&&c.checked?1:0}),hf:$("wf").value,ht:$("wt").value,on:F?F.on:true}}
 function adSt(){F=rd();F.steps.push("");A()}
 function rmSt(i){F=rd();F.steps.splice(i,1);A()}
-function svS(){var o=rd();if(!o.n||!o.price){alert("عنوان و مبلغ کل را وارد کن.");return}o.steps=o.steps.filter(Boolean);
+function svS(){var o=rd();if(!o.n||!o.price){alert("عنوان و مبلغ کل را وارد کن.");return}o.steps=o.steps.filter(Boolean);if(!o.wp){delete o.wd;delete o.hf;delete o.ht}
+ if(o.wp&&o.hf&&o.ht&&J.hm(o.ht)<=J.hm(o.hf)){alert("ساعت پایان باید بعد از شروع باشد.");return}
  if(o.id){D.services=D.services.map(function(x){return x.id===o.id?o:x})}else{o.id="s"+Date.now();D.services.push(o)}sv();go("s","sv","svl")}
 function eS(i){F=JSON.parse(JSON.stringify(D.services.filter(function(x){return x.id===i})[0]));NAV.path=["s","sv","svn"];A();window.scrollTo(0,0)}
 function tgS(i){D.services.forEach(function(x){if(x.id===i)x.on=!x.on});sv();A()}
 function dS(i){if(confirm("حذف شود؟")){D.services=D.services.filter(function(x){return x.id!==i});sv();A()}}
 
 /* ================= ساعت کاری ================= */
+function stepAuto(){var g=0,gc=function(x,y){return y?gc(y,x%y):x};D.services.forEach(function(x){if(x.on&&x.min>0)g=gc(g,x.min)});if(!g)return 30;return Math.max(15,Math.min(60,g))}
 function tHrMake(){
  var h=D.hs,wd=J.WD.map(function(w,i){return '<label class="mu"><input type="checkbox" class="hw" value="'+i+'"'+(h.wd[i]?' checked':'')+'> '+w+'</label>'}).join(" ");
- return box("",'<div class="r"><div><span class="mu">شروع</span><input id="ha" type="time" value="'+h.from+'"></div><div><span class="mu">پایان</span><input id="hb" type="time" value="'+h.to+'"></div></div><div class="r"><div><span class="mu">فاصله‌ی ساعت‌ها (دقیقه)</span><input id="hs" inputmode="numeric" value="'+h.step+'"></div><div><span class="mu">برای چند روز آینده</span><input id="hdn" inputmode="numeric" value="'+h.n+'"></div></div><p class="mu">روزهای کاری:</p><div>'+wd+'</div><button onclick="gen()">ساخت ساعت‌ها</button><p class="mu">ساعت‌های روزهای ساخته‌شده جایگزین می‌شود؛ نوبت‌های تأییدشده و روزهای تعطیل دست‌نخورده می‌مانند. بعد از هر تغییر لینک مشتری را دوباره بفرست.</p>');
+ return box("",'<div class="r"><div><span class="mu">شروع</span><input id="ha" type="time" value="'+h.from+'"></div><div><span class="mu">پایان</span><input id="hb" type="time" value="'+h.to+'"></div></div><span class="mu">برای چند روز آینده</span><div class="r" style="align-items:center"><input id="hdn" inputmode="numeric" value="'+h.n+'"'+(h.perm?' disabled':'')+'><label class="mu" style="flex:0;white-space:nowrap"><input type="checkbox" id="hpm"'+(h.perm?' checked':'')+' onchange="$(\'hdn\').disabled=this.checked"> دائمی</label></div><p class="mu">«دائمی»: هر روز که می‌گذرد، روزهای جدید خودکار به ساعت‌ها اضافه می‌شود (تا ۳۰ روز جلوتر)، بدون اینکه دوباره بسازی.</p><p class="mu">روزهای کاری:</p><div>'+wd+'</div><button onclick="gen()">ساخت ساعت‌ها</button><p class="mu">فاصله‌ی ساعت‌ها خودکار از مدت خدمت‌ها ساخته می‌شود. ساعت‌های روزهای ساخته‌شده جایگزین می‌شود؛ نوبت‌های تأییدشده و روزهای تعطیل دست‌نخورده می‌مانند. بعد از هر تغییر لینک مشتری را دوباره بفرست.</p>');
+}
+function mkDay(d,a,b,st,nm){var ts=[],m,t=td();for(m=a;m+st<=b;m+=st){if(d===t&&m<=nm)continue;ts.push(J.mm(m))}return ts}
+function autoGen(){
+ var h=D.hs;if(!h.perm||!h.from)return;
+ var a=J.hm(h.from),b=J.hm(h.to),st=h.step||30,t=td(),i,ch=0,now=new Date(),nm=now.getHours()*60+now.getMinutes();
+ Object.keys(D.gd).forEach(function(d){if(d<t)delete D.gd[d]});
+ for(i=0;i<30;i++){var d=addD(t,i);if(D.gd[d]||D.days[d]||D.closed.indexOf(d)>-1||!h.wd[J.wd(d)])continue;var ts=mkDay(d,a,b,st,nm);if(ts.length){D.days[d]=ts;D.gd[d]=1;ch=1}}
+ if(ch)sv();
 }
 function gen(){
- var a=J.hm($("ha").value),b=J.hm($("hb").value),st=nu("hs")||60,n=Math.min(60,nu("hdn")||7),wd=[0,0,0,0,0,0,0];
+ var a=J.hm($("ha").value),b=J.hm($("hb").value),perm=$("hpm").checked,st=stepAuto(),n=perm?30:Math.min(60,nu("hdn")||7),wd=[0,0,0,0,0,0,0];
  [].forEach.call(document.querySelectorAll(".hw"),function(c){wd[+c.value]=c.checked?1:0});
- if(b<=a||st<5){alert("ساعت پایان باید بعد از شروع باشد و فاصله حداقل ۵ دقیقه.");return}
- D.hs={from:$("ha").value,to:$("hb").value,step:st,n:n,wd:wd};
- var t=td(),now=new Date(),nm=now.getHours()*60+now.getMinutes(),i,m;
+ if(b<=a){alert("ساعت پایان باید بعد از شروع باشد.");return}
+ D.hs={from:$("ha").value,to:$("hb").value,step:st,n:perm?(D.hs.n||14):n,perm:perm,wd:wd};
+ var t=td(),now=new Date(),nm=now.getHours()*60+now.getMinutes(),i;
  Object.keys(D.days).forEach(function(d){if(d<t)delete D.days[d]});
+ D.gd={};
  for(i=0;i<n;i++){
   var d=addD(t,i);delete D.days[d];
   if(!wd[J.wd(d)]||D.closed.indexOf(d)>-1)continue;
-  var ts=[];for(m=a;m+st<=b;m+=st){if(d===t&&m<=nm)continue;ts.push(J.mm(m))}
-  if(ts.length)D.days[d]=ts;
+  var ts=mkDay(d,a,b,st,nm);
+  if(ts.length){D.days[d]=ts;D.gd[d]=1}
  }
  D.ap.forEach(function(x){if(x.st==="ok"&&x.date>=t)rmSlots(x.date,x.time,x.min)});
  sv();go("s","hr","hrl");
@@ -215,7 +229,7 @@ function tHrList(){
 function clT(d,t){D.days[d]=D.days[d].filter(function(x){return x!==t});if(!D.days[d].length)delete D.days[d];sv();A()}
 function tHrClosed(){
  var ls=D.closed.filter(function(d){return d>=td()}).sort().map(function(d){return '<div class="row"><b>'+fdw(d)+'</b><button class="g" onclick="openDay(\''+d+'\')">باز کردن</button></div>'}).join("")||'<p class="mu">روز تعطیلی ثبت نشده.</p>';
- return box("",ls+'<hr><span class="mu">افزودن روز تعطیل (مثلاً مسافرت یا مناسبت)</span>'+jd("cd",""," ")+'<button onclick="addCl()">افزودن تعطیلی</button>');
+ return box("",ls+'<hr><span class="mu">افزودن روز تعطیل (مثلاً مسافرت یا مناسبت)</span>'+jd("cd","",{})+'<button onclick="addCl()">افزودن تعطیلی</button>');
 }
 function addCl(){var d=jv("cd");if(!d){alert("تاریخ را انتخاب کن.");return}closeDay(d)}
 
@@ -260,30 +274,48 @@ function tDash(){
  var inc=ap.filter(function(a){return a.st==="done"||a.st==="ok"}).reduce(function(s,a){var x=svcByName(a.sn,a.sid);return s+(x&&a.date>=addD(t,-30)?fp(x):0)},0);
  var nx=ap.filter(function(a){return a.st==="ok"&&a.date>=t}).sort(function(a,b){return a.date===b.date?(a.time<b.time?-1:1):(a.date<b.date?-1:1)}).slice(0,5);
  return '<div class="stats">'+stat("نوبت امروز",fn(tn),"var(--ac)")+stat("منتظر تأیید",fn(nw),"var(--wn)")+stat("نوبت‌های ۷ روز آینده",fn(wk),"var(--in)")+stat("مشتری‌ها",fn(custs().length),"var(--ok)")+'</div>'+
- (nw?'<button class="ok2" style="width:100%" onclick="go(\'d\',\'ap\',\'new\')">'+fn(nw)+' درخواست منتظر تأیید است ←</button>':'')+
+ (nw?'<button class="ok2" style="width:100%" onclick="go(\'d\',\'ap\',\'new\')">'+fn(nw)+' درخواست منتظر تأیید است ←</button>':'')+tCal()+
  box("",'<h2>نوبت‌های بعدی</h2>'+(nx.map(apRow).join("")||'<p class="mu">نوبت تأییدشده‌ای نیست.</p>'))+
  box("",'<p class="mu">درآمد تقریبی ۳۰ روز اخیر (بر اساس قیمت خدمت‌های تأییدشده/انجام‌شده)</p><b style="font-size:20px">'+fm(inc)+'</b>');
 }
 
 /* ================= لینک مشتری ================= */
-function pub(){
+function pub(withLogo){
+ autoGen();
  var days={};Object.keys(D.days).forEach(function(d){if(d>=td()&&D.closed.indexOf(d)<0)days[d]=D.days[d]});
- return{name:dname(),phone:D.phone,th:D.theme||"",st:D.hs.step||60,services:D.services.filter(function(x){return x.on}),cards:D.cards.map(function(c){return c.on?c:null}),addrs:D.addrs.map(function(c){return c.on?c:null}),links:D.links,days:days};
+ return{name:dname(),phone:D.phone,th:D.theme||"",st:D.hs.step||30,ls:D.lside||"r",lg:(withLogo&&D.logo)?D.logo:undefined,services:D.services.filter(function(x){return x.on}),cards:D.cards.map(function(c){return c.on?c:null}),addrs:D.addrs.map(function(c){return c.on?c:null}),links:D.links,days:days};
 }
-function lk(){return location.href.split("#")[0]+"#"+enc(pub())}
 function tLk(){
  return box("",'<button onclick="mkL()">ساخت لینک و QR</button> <button class="g" onclick="preview()">پیش‌نمایش</button><div id="lo"></div><p class="mu">لینک عکسی از ساعت‌های خالی همین لحظه است. بعد از هر تأیید نوبت یا تغییر ساعت‌ها، دوباره بساز و بفرست.</p>');
 }
-function mkL(){var u=lk(),t=(dname()?dname()+": ":"")+"رزرو نوبت از این لینک:\n"+u,e=encodeURIComponent;
- window._lt=t;
- $("lo").innerHTML='<div class="ltr" style="max-height:60px;overflow:auto;margin:8px 0">'+esc(u)+'</div>'+shareBtns("window._lt","''")+'<div id="qr"></div><p class="mu" id="qm"></p><button class="g" onclick="dlq()">دانلود QR</button>';
- try{$("qr").innerHTML=qrSvg(u)}catch(x){$("qr").style.display="none";$("qm").textContent="اطلاعات برای QR زیاد است (خدمت یا ساعت زیاد)؛ لینک را به‌جای آن بفرست."}}
-function dlq(){try{dl("salon-qr.svg",qrSvg(lk()),"image/svg+xml")}catch(e){alert("QR ساخته نشد.")}}
+function mkL(){
+ var base=location.href.split("#")[0],lo=$("lo");lo.innerHTML='<p class="mu">در حال ساخت...</p>';
+ Promise.all([zip(packPub(pub(true))),zip(packPub(pub(false)))]).then(function(r){
+  var u=base+"#"+r[0],q=base+"#"+r[1];
+  window._lt=(dname()?dname()+": ":"")+"رزرو نوبت از این لینک:\n"+u;window._qu=q;
+  lo.innerHTML='<div class="ltr" style="max-height:60px;overflow:auto;margin:8px 0">'+esc(u)+'</div>'+shareBtns("window._lt","''")+'<div id="qr"></div><p class="mu" id="qm"></p><button class="g" onclick="dlq()">دانلود QR</button>';
+  try{$("qr").innerHTML=qrSvg(q);$("qm").textContent=D.logo?"QR بدون لوگو ساخته می‌شود تا کوچک و قابل اسکن بماند؛ لینک متنی لوگو دارد.":""}catch(x){$("qr").style.display="none";$("qm").textContent="اطلاعات برای QR زیاد است (خدمت یا ساعت زیاد)؛ لینک متنی را بفرست."}
+ }).catch(function(){lo.innerHTML='<p class="er">ساخت لینک ناموفق بود.</p>'});
+}
+function dlq(){try{dl("salon-qr.svg",qrSvg(window._qu),"image/svg+xml")}catch(e){alert("QR ساخته نشد.")}}
 function preview(){mode="c";C0=pub();sel={s:null,d:null,t:null,pt:"dep"};C()}
 
 /* ================= تنظیمات ================= */
 function tPf(){
- return box("",'<div class="r"><input placeholder="نام" value="'+esc(D.fn)+'" oninput="D.fn=this.value;pf()"><input placeholder="نام خانوادگی" value="'+esc(D.ln)+'" oninput="D.ln=this.value;pf()"></div><input class="ltr" inputmode="tel" placeholder="شماره موبایل" value="'+esc(D.phone)+'" oninput="D.phone=this.value;pf()"><input placeholder="نام اختصاری (اختیاری): نام سالن یا هر کلمه‌ای" value="'+esc(D.nick)+'" oninput="D.nick=this.value;pf()"><p class="mu">اگر نام اختصاری بنویسی، همان بالای صفحه و در صفحه مشتری نمایش داده می‌شود؛ وگرنه نام و نام خانوادگی.</p>');
+ return box("",'<div class="r"><input placeholder="نام" value="'+esc(D.fn)+'" oninput="D.fn=this.value;pf()"><input placeholder="نام خانوادگی" value="'+esc(D.ln)+'" oninput="D.ln=this.value;pf()"></div><input class="ltr" inputmode="tel" placeholder="شماره موبایل" value="'+esc(D.phone)+'" oninput="D.phone=this.value;pf()"><input placeholder="نام اختصاری (اختیاری): نام سالن یا هر کلمه‌ای" value="'+esc(D.nick)+'" oninput="D.nick=this.value;pf()"><p class="mu">اگر نام اختصاری بنویسی، همان بالای صفحه و در صفحه مشتری نمایش داده می‌شود؛ وگرنه نام و نام خانوادگی.</p>')+tLogo();
+}
+function tLogo(){
+ return box("لوگوی سالن",(D.logo?'<p><img class="lgi" src="'+D.logo+'" alt="لوگو"></p>':'<p class="mu">لوگو ثبت نشده.</p>')+'<input type="file" id="lgf" accept="image/png,image/jpeg,image/webp" onchange="lgSet(this)"><div class="r" style="align-items:center"><span class="mu" style="flex:0;white-space:nowrap">جای لوگو کنار نام</span><select onchange="D.lside=this.value;sv();A()"><option value="r"'+(D.lside!=="l"?' selected':'')+'>سمت راست</option><option value="l"'+(D.lside==="l"?' selected':'')+'>سمت چپ</option></select></div>'+(D.logo?'<button class="d" onclick="if(confirm(\'لوگو حذف شود؟\')){D.logo=\'\';sv();A()}">حذف لوگو</button>':'')+'<p class="mu" id="lgm"></p><details><summary class="mu">راهنما: ساخت لوگو</summary><ul class="mu"><li>با برنامه‌هایی مثل Canva، Photopea یا PicsArt لوگو را بساز؛ اندازه‌ی مربع حدود ۳۰۰×۳۰۰ پیکسل مناسب است.</li><li>فایل PNG، JPG یا WebP را اینجا بگذار؛ برنامه خودش کوچکش می‌کند تا داخل لینک مشتری جا شود.</li><li>لوگو بالای صفحه‌ی مشتری و بالای همین پنل نمایش داده می‌شود (در QR نمی‌آید تا QR کوچک بماند).</li></ul></details>');
+}
+function lgSet(el){
+ var f=el.files[0];if(!f)return;var m=$("lgm"),r=new FileReader();
+ r.onload=function(){var im=new Image();im.onerror=function(){m.textContent="تصویر خوانده نشد."};im.onload=function(){
+  var sz=[96,72,56],q=[0.6,0.5,0.4],k,out="";
+  for(k=0;k<sz.length;k++){var sc=Math.min(1,sz[k]/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*sc)),h=Math.max(1,Math.round(im.height*sc)),c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(im,0,0,w,h);
+   out=c.toDataURL("image/webp",q[k]);if(out.indexOf("data:image/webp")!==0)out=c.toDataURL("image/jpeg",q[k]);if(out.length<6000)break}
+  if(out.length>=9000){m.textContent="تصویر پیچیده است؛ تصویر ساده‌تر یا کوچک‌تر بگذار.";return}
+  D.logo=out;sv();A()};im.src=r.result};
+ r.readAsDataURL(f);
 }
 function pf(){sv();var e=$("hn");if(e)e.textContent=dname()||"پنل سالن"}
 function tSt(){
@@ -337,13 +369,37 @@ function tMs(){
  window._ms=PV.ms||"";
  return box("",'<textarea id="msx" rows="4" placeholder="پیامت برای مدیر" oninput="window._ms=this.value;PV.ms=this.value">'+esc(PV.ms||"")+'</textarea><p class="mu">کد دستگاه ('+D.dev+') و نام سالن خودکار اضافه می‌شود.</p><div class="ch">'+(ks.map(function(k){return '<button class="g" onclick="msgAdm(\''+k[0]+'\')">'+k[1]+'</button>'}).join("")||'<span class="mu">'+(PL?'مدیر راه تماسی تعریف نکرده.':'در حال دریافت... (نیاز به اینترنت)')+'</span>')+'</div>');
 }
-function msgAdm(t){var c=MG.c||{},txt=(window._ms||"")+"\n\nکد دستگاه: "+D.dev+(dname()?"\nسالن: "+dname():"");if(t==="sms"||t==="wa")sendTo(t,txt,c[t]);else{try{navigator.clipboard.writeText(txt)}catch(x){}alert("پیام کپی شد. در صفحه بعد بچسبان.");window.open(c[t])}}
+function msgAdm(t){sendAdm(t,window._ms||"")}
+function sendAdm(t,body){var c=MG.c||{},txt=body+"\n\nکد دستگاه: "+D.dev+(dname()?"\nسالن: "+dname():"");if(t==="sms"||t==="wa")sendTo(t,txt,c[t]);else{try{navigator.clipboard.writeText(txt)}catch(x){}alert("پیام کپی شد. در صفحه بعد بچسبان.");window.open(c[t])}}
+var FB={r:0,c:""};
+function stars(r,fnc){return '<div class="stars">'+[1,2,3,4,5].map(function(i){return '<button type="button" class="'+(r>=i?'on':'')+'" onclick="'+fnc+'('+i+')">★</button>'}).join("")+'</div>'}
+function stx(r){var o="",i;for(i=1;i<=5;i++)o+=i<=r?"★":"☆";return o}
+function fbR(i){FB.r=i;A()}
+function tFb(){
+ var c=MG.c||{},ks=[["sms","پیامک"],["wa","واتس‌اپ"],["eitaa","ایتا"],["rubika","روبیکا"],["tg","تلگرام"]].filter(function(k){return c[k[0]]});
+ return box("",'<h2>از برنامه راضی هستی؟</h2>'+stars(FB.r,"fbR")+'<textarea rows="4" placeholder="پیشنهاد یا انتقادت درباره‌ی برنامه" oninput="FB.c=this.value">'+esc(FB.c)+'</textarea><p class="mu">کد دستگاه و نام سالن خودکار اضافه می‌شود.</p><div class="ch">'+(ks.map(function(k){return '<button class="g" onclick="fbSend(\''+k[0]+'\')">'+k[1]+'</button>'}).join("")||'<span class="mu">'+(PL?'مدیر راه تماسی تعریف نکرده.':'در حال دریافت... (نیاز به اینترنت)')+'</span>')+'</div>');
+}
+function fbSend(t){
+ if(!FB.r&&!FB.c.trim()){alert("امتیاز بده یا پیشنهادت را بنویس.");return}
+ sendAdm(t,"رضایت‌سنجی برنامه\nامتیاز: "+stx(FB.r)+" ("+fn(FB.r)+" از ۵)\nپیشنهاد: "+(FB.c.trim()||"—"));
+}
+function parseRv(t){
+ t=J.en(t);var m=t.match(/SB2:([A-Za-z0-9+\/=_-]+)/);
+ if(!m)return null;try{var o=dec(m[1].replace(/-/g,"+").replace(/_/g,"/"));if(o&&o.r)return{sn:o.s||"",r:+o.r,c:o.c||"",n:o.n||"",p:o.p||""}}catch(e){}return null;
+}
+function rvAdd(){var o=parseRv($("rvx").value),m=$("rvm");if(!o){m.textContent="پیام نظر مشتری شناخته نشد.";return}o.id=J.uid();o.date=td();D.rv.push(o);sv();A()}
+function rvDel(i){if(confirm("حذف شود؟")){D.rv=D.rv.filter(function(x){return x.id!==i});sv();A()}}
+function tRv(){
+ var L=D.rv.slice().sort(function(a,b){return a.date<b.date?1:-1}),avg=L.length?L.reduce(function(s,x){return s+x.r},0)/L.length:0;
+ return box("",'<h2>وارد کردن نظر مشتری</h2><textarea id="rvx" rows="3" placeholder="پیام نظر مشتری را اینجا بچسبان"></textarea><button onclick="rvAdd()">افزودن</button><p class="mu" id="rvm"></p>')+
+ box("",(L.length?'<p><b>میانگین: '+fn(Math.round(avg*10)/10)+' از ۵</b> · '+fn(L.length)+' نظر</p>':'')+(L.map(function(x){return '<div class="row" style="align-items:flex-start"><div><b>'+esc(x.n||"مشتری")+'</b> · '+esc(x.sn||"")+' <span class="wn">'+stx(x.r)+'</span><small>'+fd(x.date)+'</small>'+(x.c?'<div>'+esc(x.c)+'</div>':'')+'</div><button class="d" onclick="rvDel(\''+x.id+'\')">حذف</button></div>'}).join("")||'<p class="mu">هنوز نظری ثبت نشده.</p>'));
+}
 function tIns(){
  var u=location.href.split("#")[0];window._it="برنامه نوبت‌دهی سالن: "+u;
  return box("",'<h2>نصب روی گوشی</h2>'+(IP?'<button onclick="IP.prompt()">نصب برنامه</button>':'<p class="mu">اندروید (Chrome): منو ← Install app یا Add to Home screen.<br>آیفون (Safari): دکمه اشتراک‌گذاری ← Add to Home Screen.</p>'))+box("",'<h2>معرفی برنامه به دوستان</h2>'+shareBtns("window._it","''"));
 }
 function tBk(){return box("",'<p class="mu">اطلاعات فقط داخل مرورگر همین دستگاه است. هفته‌ای یک‌بار پشتیبان بگیر و فایل را در روبیکا یا ایتای خودت ذخیره کن.</p><button onclick="dl(\'salon-backup.json\',JSON.stringify(D))">دانلود پشتیبان</button> <button class="g" onclick="$(\'bf\').click()">بازیابی از فایل</button><input type="file" id="bf" accept=".json" style="display:none" onchange="rs(this)">')}
-function rs(el){var f=el.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);["name","fn","ln","nick","phone","addrs","services","cards","links","days","ap","cu","cn","closed","msg","theme","hs"].forEach(function(k){if(o[k]!=null)D[k]=o[k]});if(o.dev===D.dev){if(o.codes)D.codes=o.codes;if(o.trial)D.trial=o.trial}sv();setTheme(D.theme);verifyAll().then(A)}catch(e){alert("فایل معتبر نیست.")}};r.readAsText(f)}
+function rs(el){var f=el.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);["name","fn","ln","nick","phone","addrs","services","cards","links","days","ap","cu","cn","closed","msg","theme","hs","logo","lside","rv","gd"].forEach(function(k){if(o[k]!=null)D[k]=o[k]});if(o.dev===D.dev){if(o.codes)D.codes=o.codes;if(o.trial)D.trial=o.trial}sv();setTheme(D.theme);verifyAll().then(A)}catch(e){alert("فایل معتبر نیست.")}};r.readAsText(f)}
 function tTx(){
  var ms=[["ok","پیام تأیید نوبت"],["rej","پیام رد / زمان دیگر"],["rem","پیام یادآوری"]].map(function(k){return '<span class="mu">'+k[1]+'</span><textarea rows="3" oninput="D.msg.'+k[0]+'=this.value;sv()">'+esc(msgT(k[0]))+'</textarea>'}).join("");
  return box("",ms+'<p class="mu">جای‌نگهدار: {name} نام مشتری، {service} خدمت، {date} تاریخ، {time} ساعت، {salon} نام سالن، {addr} آدرس.</p><button class="g" onclick="if(confirm(\'متن‌ها به حالت اول برگردد؟\')){D.msg={};sv();A()}">بازگشت به متن پیش‌فرض</button>')+
@@ -361,31 +417,36 @@ NAV.tree=[
    {k:"all",t:"همه",v:function(){return listFor("all")}},
    {k:"add",t:"ثبت نوبت جدید",v:aptAdd}]},
   {k:"lk",t:"لینک و QR مشتری",ic:"🔗",v:tLk},
-  {k:"cal",t:"تقویم شمسی",ic:"🗓",v:tCal}]},
- {k:"s",t:"خدمات",ic:"💇",ch:[
+  {k:"ins",t:"معرفی و نصب برنامه",ic:"📣",v:tIns}]},
+ {k:"s",t:"خدمات",ic:"💇",first:false,ch:[
   {k:"sv",t:"خدمات من",ch:[{k:"svl",t:"ثبت‌شده",v:tSvList},{k:"svn",t:"ثبت جدید",v:tSvNew}]},
   {k:"hr",t:"ساعت کاری",ch:[{k:"hrm",t:"ساخت ساعت‌ها",v:tHrMake},{k:"hrl",t:"ثبت‌شده",v:tHrList},{k:"hrc",t:"تعطیلی",v:tHrClosed}]},
   {k:"ad",t:"آدرس‌ها",v:tAd},
   {k:"ln",t:"لینک‌ها و کانال‌ها",v:tL},
   {k:"cu",t:"مشتری‌ها",v:tCu},
+  {k:"rv",t:"نظرات مشتری‌ها",v:tRv},
   {k:"pv",t:"دیدن صفحه‌ی مشتری",v:function(){return box("",'<p class="mu">صفحه‌ای که مشتری می‌بیند.</p><button onclick="preview()">باز کردن پیش‌نمایش</button>')}}]},
- {k:"t",t:"تنظیمات",ic:"⚙️",ch:[
+ {k:"t",t:"تنظیمات",ic:"⚙️",first:false,ch:[
   {k:"pf",t:"مشخصات",v:tPf},
   {k:"sub",t:"اشتراک",ch:[{k:"st",t:"وضعیت و کد دستگاه",v:tSt},{k:"pl",t:"پلن‌ها و پرداخت",v:tPl},{k:"ac",t:"کد فعال‌سازی",v:tAc},{k:"tr",t:"دوره‌ی رایگان",v:tTr}]},
   {k:"pay",t:"پرداخت از مشتری",v:tK},
   {k:"ms",t:"پیام به مدیر",v:tMs},
-  {k:"ins",t:"نصب و معرفی برنامه",v:tIns},
+  {k:"fb",t:"پیشنهاد و رضایت‌سنجی",v:tFb},
   {k:"bk",t:"پشتیبان‌گیری",v:tBk},
   {k:"tx",t:"متن پیام‌ها و رنگ‌ها",v:tTx}]}
 ];
 decorNav(NAV.tree,{"s/ad":1,"s/sv":2,"s/hr":3,"s/ln":4,"s/sv/svn":1,"s/sv/svl":2,"s/hr/hrm":1,"s/hr/hrl":2,"s/hr/hrc":3,"t/sub/st":1,"t/sub/pl":2,"t/sub/ac":3},{
- "d":"خلاصه‌ی کار امروز. اگر درخواست جدید هست دکمه‌ی سبز را بزن.",
+ "d":"روی هر روز تقویم بزن تا نوبت‌هایش را ببینی؛ رنگ و عدد تعداد نوبت‌هاست.",
  "d/ap/today":"نوبت‌های امروز تو.",
  "d/ap/new":"درخواست‌های مشتری. «تأیید» ساعت را می‌بندد و متن تأیید را آماده می‌کند.",
  "d/ap/ok":"نوبت‌های تأییدشده. بعد از انجام، «انجام شد» را بزن.",
  "d/ap/add":"پیام مشتری را بچسبان تا نوبت ساخته شود، یا خودت نوبت دستی ثبت کن.",
  "d/lk":"لینک را بساز و برای مشتری بفرست. بعد از هر تأیید نوبت یا تغییر ساعت، دوباره بساز.",
- "d/cal":"روز را بزن تا نوبت‌هایش را ببینی. می‌توانی روز را تعطیل کنی.",
+ "d/ins":"برنامه را روی صفحه‌ی گوشی نصب کن یا برای هم‌صنف‌هایت بفرست.",
+ "s":"یک بخش را بزن؛ بقیه پنهان می‌شوند. «بازگشت» دوباره همه را نشان می‌دهد.",
+ "t":"یک بخش را بزن؛ بقیه پنهان می‌شوند. «بازگشت» دوباره همه را نشان می‌دهد.",
+ "s/rv":"نظر و امتیازی که مشتری فرستاده را اینجا بچسبان تا ذخیره شود و میانگین امتیازت را ببینی.",
+ "t/fb":"امتیاز بده و پیشنهادت درباره‌ی برنامه را برای مدیر بفرست.",
  "s/ad":"اول آدرس سالن را ثبت کن؛ بعد در هر خدمت انتخابش می‌کنی.",
  "s/sv/svn":"نام، قیمت، مدت و بیعانه را بنویس. مدت خدمت روی ساعت‌های قابل‌انتخاب مشتری اثر دارد.",
  "s/sv/svl":"خدمت‌هایت. با «ویرایش» تغییرشان بده.",
@@ -402,20 +463,19 @@ decorNav(NAV.tree,{"s/ad":1,"s/sv":2,"s/hr":3,"s/ln":4,"s/sv/svn":1,"s/sv/svl":2
  "t/sub/tr":"دوره‌ی رایگان فقط یک‌بار برای هر دستگاه است.",
  "t/pay":"کارتی که مشتری برای بیعانه می‌بیند. در هر خدمت انتخاب می‌کنی کدام نمایش داده شود.",
  "t/ms":"پیامت را بنویس و از راه‌های مدیر بفرست.",
- "t/ins":"برنامه را روی صفحه‌ی گوشی نصب کن یا به دوستانت معرفی کن.",
  "t/bk":"هفته‌ای یک‌بار پشتیبان بگیر و فایلش را جای امن نگه دار.",
  "t/tx":"متن پیام‌هایی که برای مشتری ساخته می‌شود و رنگ برنامه را اینجا عوض کن."
 });
 NAV.path=["d"];NAV.draw=function(){A()};
 function head(){
  var st=actv()?'<span class="badge ok">● فعال'+(ST.kind==="trial"?" (رایگان)":"")+' · '+fn(left())+' روز</span>':'<span class="badge er">غیرفعال</span>';
- return '<div class="hd"><h1 id="hn">'+esc(dname()||"پنل سالن")+'</h1>'+st+'</div>';
+ return '<div class="hd">'+(D.logo&&D.lside!=="l"?'<img class="lgi" style="max-height:44px" src="'+D.logo+'" alt="">':'')+'<h1 id="hn">'+esc(dname()||"پنل سالن")+'</h1>'+(D.logo&&D.lside==="l"?'<img class="lgi" style="max-height:44px" src="'+D.logo+'" alt="">':'')+st+'</div>';
 }
 function A(){
  var p=NAV.path,lock=!actv()&&!(p[0]==="t"&&(p[1]==="sub"||p[1]==="bk"));
  if(lock)NAV.path=["t","sub","pl"];
  if(NAV.path[0]==="t"&&NAV.path[1]==="sub"&&!PL)loadPlans();
- if(NAV.path[1]==="ms"&&!PL)loadPlans();
+ if((NAV.path[1]==="ms"||NAV.path[1]==="fb")&&!PL)loadPlans();
  var nv=navHtml(),n=nv.last,body="";
  if(!actv()&&!D.trial&&!ST.exp)body='';
  body=n&&n.v?n.v():(n&&n.ch?'':'');
@@ -427,6 +487,7 @@ function A(){
 function okSlot(d,t,x){
  var L=C0.days[d]||[],st=C0.st||60,need=Math.max(1,Math.ceil(((x&&x.min)||0)/st)),t0=J.hm(t),k;
  for(k=0;k<need;k++){if(L.indexOf(J.mm(t0+k*st))<0)return false}
+ if(x&&x.wp){if(x.wd&&!x.wd[J.wd(d)])return false;if(x.hf&&t0<J.hm(x.hf))return false;if(x.ht&&t0+need*st>J.hm(x.ht))return false}
  if(d===td()){var n=new Date();if(t0<=n.getHours()*60+n.getMinutes())return false}
  return true;
 }
@@ -437,15 +498,26 @@ function C(){
  var cv=function(i){return CV[i]||""};
  var cd="";if(x){cd=(x.cards||[]).map(function(i){return(C0.cards||[])[i]}).filter(Boolean).map(function(c){return '<div class="row"><div><b>'+esc(c.h)+'</b> · '+esc(c.b)+'<small class="ltr">'+esc(c.num)+'</small></div><button class="g" onclick="cp(this)" data-t="'+esc(en(c.num))+'">کپی</button></div>'}).join("")}
  var tm=(x&&sel.d)?C0.days[sel.d].filter(function(t){return okSlot(sel.d,t,x)}):[];
- app.innerHTML=(location.hash.length<=10?'<button class="g" onclick="mode=\'a\';A()">← بازگشت به پنل</button>':'')+'<h1>'+esc(C0.name||"رزرو نوبت")+'</h1>'+
+ app.innerHTML=(location.hash.length<=10?'<button class="g" onclick="mode=\'a\';A()">← بازگشت به پنل</button>':'')+'<div class="hdl">'+(C0.lg&&C0.ls!=="l"?'<img class="lgi" src="'+esc(C0.lg)+'" alt="">':'')+'<h1>'+esc(C0.name||"رزرو نوبت")+'</h1>'+(C0.lg&&C0.ls==="l"?'<img class="lgi" src="'+esc(C0.lg)+'" alt="">':'')+'</div>'+
  (!S.length?box("","فعلاً خدمتی تعریف نشده."):
  box("",'<h2>۱. خدمت</h2><p class="mu">اول خدمت را انتخاب کن.</p><div class="ch">'+S.map(function(y,i){return '<button class="'+(sel.s===i?'on':'')+'" onclick="pk(\'s\','+i+')">'+esc(y.n)+'</button>'}).join("")+'</div>'+
  (x?'<p><b>'+fm(fp(x))+'</b>'+(fp(x)<x.price?' <s class="mu">'+fm(x.price)+'</s>':'')+' · '+fn(x.min||0)+' دقیقه · بیعانه '+fm(x.dep||0)+'</p>'+(dtx(x)?'<p class="ok">'+dtx(x)+'</p>':'')+(x.note?'<p class="mu">'+esc(x.note)+'</p>':'')+(x.steps&&x.steps.length?'<ol class="mu">'+x.steps.map(function(s){return '<li>'+esc(s)+'</li>'}).join("")+'</ol>':''):'')))+
  (x?adc(x):'')+(x?box("",'<h2>۲. روز</h2><p class="mu">روزی که می‌خواهی بیایی را بزن.</p>'+(dk.length?'<div class="ch">'+dk.map(function(d){return '<button class="'+(sel.d===d?'on':'')+'" onclick="pk(\'d\',\''+d+'\')">'+fd(d)+'</button>'}).join("")+'</div>':'<p class="er">فعلاً زمان خالی برای این خدمت نیست.</p>')):'')+(x&&sel.d?box("",'<h2>۳. ساعت</h2><p class="mu">فقط ساعت‌هایی نشان داده می‌شود که برای مدت این خدمت خالی است.</p><div class="ch">'+tm.map(function(t){return '<button class="'+(sel.t===t?'on':'')+'" onclick="pk(\'t\',\''+t+'\')">'+t+'</button>'}).join("")+'</div>'):'')+
  (x&&sel.t?box("",'<h2>۴. واریز</h2><p class="mu">مبلغ را به یکی از کارت‌ها بزن، بعد سه کادر پایین را پر کن.</p><div class="ch"><button class="'+(sel.pt==="dep"?'on':'')+'" onclick="pk(\'pt\',\'dep\')">بیعانه</button><button class="'+(sel.pt==="full"?'on':'')+'" onclick="pk(\'pt\',\'full\')">مبلغ کل</button></div><p>مبلغ: <b>'+fm(sel.pt==="dep"?(x.dep||0):fp(x))+'</b></p>'+(cd||'<p class="mu">کارتی نمایش داده نمی‌شود.</p>')+
- '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(cv("pa"))+'" oninput="fi(this);CV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(cv("pd"))+'" oninput="CV.pd=this.value"><input id="pt" placeholder="ساعت واریز" value="'+esc(cv("pt"))+'" oninput="CV.pt=this.value"></div>'):'')+
+ '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(cv("pa"))+'" oninput="fi(this);CV.pa=this.value"></div><span class="mu">تاریخ و ساعت واریز</span><div class="r">'+jd("pd",cv("pd"),{cb:"CV.pd=jv('pd')"})+'<input id="pt" type="time" value="'+esc(cv("pt"))+'" oninput="CV.pt=this.value"></div>'):'')+
  (x&&sel.t?box("",'<h2>۵. مشخصات و ارسال</h2><p class="mu">با یکی از راه‌ها برای سالن بفرست.</p><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value"><div class="ch"><button onclick="snd(\'sms\')">ارسال با پیامک</button><button onclick="snd(\'wa\')">واتس‌اپ</button><button class="g" onclick="snd(\'ei\')">ایتا</button><button class="g" onclick="snd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p>'):'')+
+ (S.length?box("",'<h2>نظر و امتیاز شما (اختیاری)</h2><p class="mu">اگر از خدمت راضی بودی یا پیشنهادی داری، برای سالن بفرست.</p>'+stars(RV.r,"rvR")+'<textarea rows="3" placeholder="نظر یا پیشنهاد شما" oninput="RV.c=this.value">'+esc(RV.c)+'</textarea><div class="ch"><button onclick="rvSnd(\'sms\')">ارسال با پیامک</button><button onclick="rvSnd(\'wa\')">واتس‌اپ</button><button class="g" onclick="rvSnd(\'ei\')">ایتا</button><button class="g" onclick="rvSnd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="fm"></p>'):'')+
  ((C0.links||[]).length?box("",'<h2>ما را دنبال کنید</h2>'+C0.links.map(function(l){return '<div class="row"><div><b>'+esc(l.t)+'</b><small>'+plat(l.pl)+'</small></div><button class="g" onclick="window.open(\''+esc(l.u)+'\',\'_blank\')">عضویت / مشاهده</button></div>'}).join("")):'');
+}
+var RV={r:0,c:""};
+function rvR(i){RV.r=i;C()}
+function rvSnd(t){
+ var m=$("fm"),x=sel.s!==null?C0.services[sel.s]:null;
+ if(!RV.r){m.textContent="اول امتیاز بده.";return}
+ var pl={s:x?x.n:"",r:RV.r,c:RV.c.trim(),n:CV.cn||"",p:CV.cp?J.phone(CV.cp):""};
+ var txt="نظر درباره‌ی خدمت\n"+(x?"خدمت: "+x.n+"\n":"")+"امتیاز: "+stx(RV.r)+" ("+fn(RV.r)+" از ۵)\nنظر: "+(RV.c.trim()||"—")+(CV.cn?"\nنام: "+CV.cn:"")+"\n\nSB2:"+enc(pl).replace(/\+/g,"-").replace(/\//g,"_");
+ var sp=(C0.phone||"").replace(/\D/g,"");
+ if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
 function pk(k,v){sel[k]=v;if(k==="s"){sel.pt="dep";sel.d=null;sel.t=null}if(k==="d")sel.t=null;C()}
 function snd(t){
@@ -453,12 +525,12 @@ function snd(t){
  if(!x||!sel.d||!sel.t||!CV.cn||!CV.cp){m.textContent="خدمت، روز، ساعت، نام و موبایل را کامل کن.";return}
  var ph=J.phone(CV.cp);if(!J.phoneOk(ph)){m.textContent="شماره موبایل درست نیست (مثل ۰۹۱۲۳۴۵۶۷۸۹).";return}
  var pl={s:x.n,i:x.id,d:sel.d,t:sel.t,n:CV.cn,p:ph,k:sel.pt,a:CV.pa||"",pd:CV.pd||"",pt:CV.pt||""};
- var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd||"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nSB1:"+enc(pl).replace(/\+/g,"-").replace(/\//g,"_");
+ var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd?fdw(CV.pd):"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nSB1:"+enc(pl).replace(/\+/g,"-").replace(/\//g,"_");
  var sp=(C0.phone||"").replace(/\D/g,"");
  if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
 
 /* ================= شروع ================= */
 window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();IP=e});
-if(mode==="c")C();else{sv();A();if(PUB)verifyAll().then(A)}
+if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){mode="a";sv();A()})}else{autoGen();sv();A();if(PUB)verifyAll().then(A)}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js")}catch(e){}

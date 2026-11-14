@@ -219,8 +219,12 @@ decorNav(NAV.tree,{"t/key":1,"t/cards":2,"t/trial":3,"t/pub":4,"a/plans":1,"a/sa
  "t/bk":"هفته‌ای یک‌بار پشتیبان بگیر."
 });
 NAV.path=["d"];NAV.draw=function(){render()};
+var PUBK={plans:1,ct:1,cards:1,trial:1};
+function saveBtn(b){sv();b.textContent="✓ ذخیره شد";setTimeout(function(){b.textContent="ذخیره تنظیمات"},1500)}
+function pubBar(){return box("",'<p class="mu">تغییرها خودکار روی همین دستگاه ذخیره می‌شود. برای دیدن در پنل سالن‌ها، فایل را دانلود و در GitHub جایگزین کن.</p><div class="r"><button class="ok2" onclick="saveBtn(this)">ذخیره تنظیمات</button><button onclick="ex()">دانلود plans.json</button></div>')}
 function render(){
  var nv=navHtml(),n=nv.last,body=n&&n.v?n.v():"";
+ if(n&&PUBK[n.k])body+=pubBar();
  app.innerHTML='<div class="hd"><h1>ابزار مدیر</h1></div><p class="mu">این فایل را فقط روی گوشی یا کامپیوتر خودت نگه دار؛ آنلاین نگذار.</p>'+nv.nav+nv.menu+nv.tip+body;
  pvw();
 }

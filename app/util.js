@@ -25,20 +25,42 @@ function dl(n,t,ty){var a=document.createElement("a");a.href=URL.createObjectURL
 function qrSvg(t){var q=qrcode(0,"L");q.addData(t);q.make();return q.createSvgTag(4)}
 function ymdOf(iso){return J.jOf(iso)}
 
-/* انتخاب تاریخ شمسی: سه لیست سال/ماه/روز؛ مقدار ذخیره‌شده تاریخ میلادی ISO است (سازگار با داده‌ی قبلی) */
+/* انتخاب تاریخ با تقویم شمسی (پنجره‌ی تقویم)؛ مقدار ذخیره‌شده تاریخ میلادی ISO است (سازگار با داده‌ی قبلی) */
+var DP=null;
+function dpLbl(iso){return iso?"📅 "+fdw(iso):"📅 انتخاب تاریخ"}
 function jd(id,iso,opt){
- opt=opt||{};var now=J.jOf(td()),j=iso?J.jOf(iso):null,y0=now.y-(opt.back||0),ys="",ms="",ds="",i;
- for(i=y0;i<=now.y+3;i++)ys+='<option value="'+i+'"'+(j&&j.y===i?" selected":"")+'>'+J.fa(i)+'</option>';
- for(i=1;i<=12;i++)ms+='<option value="'+i+'"'+(j&&j.m===i?" selected":"")+'>'+J.JM[i-1]+'</option>';
- for(i=1;i<=31;i++)ds+='<option value="'+i+'"'+(j&&j.d===i?" selected":"")+'>'+J.fa(i)+'</option>';
- var e='<option value="">—</option>';
- return '<div class="r jd" id="'+id+'"><select>'+(opt.empty!==false?e:"")+ys+'</select><select>'+(opt.empty!==false?e:"")+ms+'</select><select>'+(opt.empty!==false?e:"")+ds+'</select></div>';
+ opt=opt||{};
+ return '<button type="button" class="dp" id="'+id+'" data-v="'+(iso||"")+'" data-e="'+(opt.empty===false?0:1)+'" data-cb="'+esc(opt.cb||"")+'" onclick="dpOpen(\''+id+'\')">'+dpLbl(iso)+'</button>';
 }
-function jv(id){
- var s=$(id).querySelectorAll("select"),y=+s[0].value,m=+s[1].value,d=+s[2].value;
- if(!y||!m||!d)return "";
- if(d>J.jLen(y,m))d=J.jLen(y,m);
- return J.isoOfJ(y,m,d);
+function jv(id){var e=$(id);return e?(e.dataset.v||""):""}
+function dpOpen(id){var e=$(id),iso=e.dataset.v||td(),j=J.jOf(iso);DP={id:id,y:j.y,m:j.m,sel:e.dataset.v||"",e:e.dataset.e==="1"};dpDraw()}
+function dpMv(n){DP.m+=n;if(DP.m>12){DP.m=1;DP.y++}if(DP.m<1){DP.m=12;DP.y--}dpDraw()}
+function dpYr(n){DP.y+=n;dpDraw()}
+function dpDraw(){
+ var len=J.jLen(DP.y,DP.m),first=J.isoOfJ(DP.y,DP.m,1),off=J.wd(first),cells="",i,t=td();
+ ["ش","ی","د","س","چ","پ","ج"].forEach(function(w){cells+='<div class="h">'+w+'</div>'});
+ for(i=0;i<off;i++)cells+='<div></div>';
+ for(i=1;i<=len;i++){var iso=J.isoOfJ(DP.y,DP.m,i);cells+='<button type="button" class="'+(iso===t?'today ':'')+(iso===DP.sel?'sel':'')+'" onclick="dpPick(\''+iso+'\')">'+J.fa(i)+'</button>'}
+ var m=$("dpm");if(!m){m=document.createElement("div");m.id="dpm";m.className="dpm";document.body.appendChild(m)}
+ m.innerHTML='<div class="c"><div class="r" style="align-items:center"><button type="button" class="g" onclick="dpMv(-1)">‹</button><b style="text-align:center">'+J.JM[DP.m-1]+' '+J.fa(DP.y)+'</b><button type="button" class="g" onclick="dpMv(1)">›</button></div><div class="r" style="margin:4px 0"><button type="button" class="g" onclick="dpYr(-1)">سال قبل</button><button type="button" class="g" onclick="dpYr(1)">سال بعد</button></div><div class="cal">'+cells+'</div><div class="ch"><button type="button" class="g" onclick="dpPick(td())">امروز</button>'+(DP.e?'<button type="button" class="g" onclick="dpPick(\'\')">پاک کردن</button>':'')+'<button type="button" class="g" onclick="dpClose()">بستن</button></div></div>';
+}
+function dpClose(){var m=$("dpm");if(m)m.remove();DP=null}
+function dpPick(iso){var e=$(DP.id);e.dataset.v=iso;e.textContent=dpLbl(iso);var cb=e.dataset.cb;dpClose();if(cb){try{new Function(cb)()}catch(x){}}}
+/* فشرده‌سازی لینک مشتری (کوچک‌تر شدن لینک و ممکن‌شدن QR) */
+function packPub(p){var ts=[],ix={},dd={};Object.keys(p.days||{}).forEach(function(d){var k=p.days[d].join(","),i=ix[k];if(i===undefined){i=ts.length;ix[k]=i;ts.push(p.days[d])}dd[d]=i});p=Object.assign({},p);p.days=undefined;p.ts=ts;p.dd=dd;return p}
+function unpackPub(p){if(p.dd){p.days={};Object.keys(p.dd).forEach(function(d){p.days[d]=p.ts[p.dd[d]]})}return p}
+function zip(o){
+ var raw=new TextEncoder().encode(JSON.stringify(o));
+ if(!window.CompressionStream)return Promise.resolve("j"+b2u(raw));
+ var cs=new CompressionStream("deflate-raw"),w=cs.writable.getWriter();w.write(raw);w.close();
+ return new Response(cs.readable).arrayBuffer().then(function(b){return "z"+b2u(b)});
+}
+function unzip(h){
+ if(h[0]!=="z"&&h[0]!=="j")return Promise.resolve(dec(h));
+ var u=u2b(h.slice(1));
+ if(h[0]==="j")return Promise.resolve(JSON.parse(new TextDecoder().decode(u)));
+ var ds=new DecompressionStream("deflate-raw"),w=ds.writable.getWriter();w.write(u);w.close();
+ return new Response(ds.readable).text().then(JSON.parse);
 }
 
 /* ---------- منوی آبشاری داده‌محور (الگوی برنامه قبلی) ----------
@@ -52,7 +74,7 @@ function nfind(list,k){for(var i=0;i<list.length;i++)if(list[i].k===k)return lis
 function nchain(){var out=[],l=NAV.tree,i,n;for(i=0;i<NAV.path.length;i++){n=nfind(l,NAV.path[i]);if(!n)break;out.push(n);l=n.ch||[]}return out}
 function go(){NAV.path=[].slice.call(arguments);NAV.open={};F=null;if(NAV.draw)NAV.draw();window.scrollTo(0,0)}
 function pick(depth,k){
- if(depth>0&&NAV.path[depth]===k){NAV.open[depth]=!NAV.open[depth];NAV.draw();return}
+ if(depth>0&&NAV.path[depth]===k){NAV.path=NAV.path.slice(0,depth);NAV.open={};F=null;NAV.draw();window.scrollTo(0,0);return}
  NAV.path=NAV.path.slice(0,depth);NAV.path.push(k);NAV.open={};var n=nchain().pop();
  while(n&&n.ch&&n.ch.length&&n.first!==false&&!n.v){NAV.path.push(n.ch[0].k);n=n.ch[0]}
  F=null;NAV.draw()}
@@ -60,7 +82,7 @@ function menuHtml(list,d,chain){
  var sel=chain[d],one=sel&&!NAV.open[d],shown=one?[sel]:list;
  return '<div class="menu lv'+Math.min(d-1,2)+'">'+shown.map(function(c){
   var on=sel&&sel.k===c.k,b=c.badge?c.badge():0;
-  return '<button class="mi'+(on?' on':'')+'" onclick="pick('+d+',\''+c.k+'\')">'+(c.ic?'<span class="ic">'+c.ic+'</span>':'')+'<span class="t">'+(c.no?fn(c.no)+'. ':'')+c.t+'</span>'+(b?'<b class="bd">'+fn(b)+'</b>':'')+'<span class="ar">'+(on&&one&&list.length>1?'تغییر ⇅':c.ch&&c.ch.length?'▾':'‹')+'</span></button>'+(on&&c.ch&&c.ch.length?menuHtml(c.ch,d+1,chain):'');
+  return '<button class="mi'+(on?' on':'')+'" onclick="pick('+d+',\''+c.k+'\')">'+(c.ic?'<span class="ic">'+c.ic+'</span>':'')+'<span class="t">'+(c.no?fn(c.no)+'. ':'')+c.t+'</span>'+(b?'<b class="bd">'+fn(b)+'</b>':'')+'<span class="ar">'+(on&&one?'↩ بازگشت':c.ch&&c.ch.length?'▾':'‹')+'</span></button>'+(on&&c.ch&&c.ch.length?menuHtml(c.ch,d+1,chain):'');
  }).join("")+'</div>';
 }
 function navHtml(){
