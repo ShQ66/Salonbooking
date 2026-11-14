@@ -43,26 +43,34 @@ function jv(id){
 
 /* ---------- منوی آبشاری داده‌محور (الگوی برنامه قبلی) ----------
    گره: {k,t,ic,ch:[...],v:()=>html,badge:()=>n}. بدون دکمه‌ی بازگشت؛ زیرمنوها اول، بعد محتوا. */
-var NAV={tree:[],path:[],draw:null,locked:null};
+var NAV={tree:[],path:[],open:{},draw:null};
+/* شماره‌ی ترتیب و راهنمای کوتاه هر منو، با کلید مسیر مثل "s/hr/hrm" */
+function decorNav(tree,NO,TIPS,pre){
+ tree.forEach(function(n){var p=pre?pre+"/"+n.k:n.k;if(NO[p])n.no=NO[p];if(TIPS[p])n.tip=TIPS[p];if(n.ch){decorNav(n.ch,NO,TIPS,p);n.ch.sort(function(a,b){return (a.no||99)-(b.no||99)})}})
+}
 function nfind(list,k){for(var i=0;i<list.length;i++)if(list[i].k===k)return list[i];return null}
 function nchain(){var out=[],l=NAV.tree,i,n;for(i=0;i<NAV.path.length;i++){n=nfind(l,NAV.path[i]);if(!n)break;out.push(n);l=n.ch||[]}return out}
-function go(){NAV.path=[].slice.call(arguments);F=null;if(NAV.draw)NAV.draw();window.scrollTo(0,0)}
-function pick(depth,k){NAV.path=NAV.path.slice(0,depth);NAV.path.push(k);var n=nchain().pop();
+function go(){NAV.path=[].slice.call(arguments);NAV.open={};F=null;if(NAV.draw)NAV.draw();window.scrollTo(0,0)}
+function pick(depth,k){
+ if(depth>0&&NAV.path[depth]===k){NAV.open[depth]=!NAV.open[depth];NAV.draw();return}
+ NAV.path=NAV.path.slice(0,depth);NAV.path.push(k);NAV.open={};var n=nchain().pop();
  while(n&&n.ch&&n.ch.length&&n.first!==false&&!n.v){NAV.path.push(n.ch[0].k);n=n.ch[0]}
  F=null;NAV.draw()}
 function menuHtml(list,d,chain){
- var sel=chain[d];
- return '<div class="menu lv'+Math.min(d-1,2)+'">'+list.map(function(c){
+ var sel=chain[d],one=sel&&!NAV.open[d],shown=one?[sel]:list;
+ return '<div class="menu lv'+Math.min(d-1,2)+'">'+shown.map(function(c){
   var on=sel&&sel.k===c.k,b=c.badge?c.badge():0;
-  return '<button class="mi'+(on?' on':'')+'" onclick="pick('+d+',\''+c.k+'\')">'+(c.ic?'<span class="ic">'+c.ic+'</span>':'')+'<span class="t">'+c.t+'</span>'+(b?'<b class="bd">'+fn(b)+'</b>':'')+'<span class="ar">'+(c.ch&&c.ch.length?'▾':'‹')+'</span></button>'+(on&&c.ch&&c.ch.length?menuHtml(c.ch,d+1,chain):'');
+  return '<button class="mi'+(on?' on':'')+'" onclick="pick('+d+',\''+c.k+'\')">'+(c.ic?'<span class="ic">'+c.ic+'</span>':'')+'<span class="t">'+(c.no?fn(c.no)+'. ':'')+c.t+'</span>'+(b?'<b class="bd">'+fn(b)+'</b>':'')+'<span class="ar">'+(on&&one&&list.length>1?'تغییر ⇅':c.ch&&c.ch.length?'▾':'‹')+'</span></button>'+(on&&c.ch&&c.ch.length?menuHtml(c.ch,d+1,chain):'');
  }).join("")+'</div>';
 }
 function navHtml(){
  var chain=nchain(),h='',l=NAV.tree,d=0;
  h+='<div class="tabs">'+NAV.tree.map(function(n){var on=NAV.path[0]===n.k;return '<button class="tab'+(on?' on':'')+'" onclick="pick(0,\''+n.k+'\')"><span>'+(n.ic||"")+'</span>'+n.t+'</button>'}).join("")+'</div>';
  var body=chain[0]&&chain[0].ch?menuHtml(chain[0].ch,1,chain):'';
- var last=chain[chain.length-1];
- return {nav:h,menu:body,last:last};
+ var last=chain[chain.length-1],tp="",qi;
+ for(qi=chain.length-1;qi>0&&!tp;qi--)tp=chain[qi].tip||"";
+ if(!tp&&chain[0])tp=chain[0].tip||"";
+ return {nav:h,menu:body,last:last,tip:tp?'<div class="tip">💡 '+tp+'</div>':''};
 }
 function stat(label,val,color,sub){return '<div class="stat" style="--sc:'+color+'"><div class="sv">'+val+'</div><div class="sl">'+label+'</div>'+(sub?'<div class="ss">'+sub+'</div>':'')+'</div>'}
 function box(title,inner,cls){return '<div class="c'+(cls?' '+cls:'')+'">'+(title?'<h2>'+title+'</h2>':'')+inner+'</div>'}

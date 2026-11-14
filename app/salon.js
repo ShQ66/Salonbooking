@@ -293,11 +293,11 @@ function tPl(){
  var x=SP&&(PL||[]).filter(function(p){return p.id===SP})[0],cs=MG.cards||[],c=MG.c||{};
  var pl=(PL||[]).map(function(p){var f=fp(p);return '<div class="row"><div><b>'+esc(p.n)+'</b><small>'+fn(p.days)+' روز'+(dtx(p)?' · '+dtx(p):'')+'</small></div><div style="text-align:center">'+(f<p.price?'<s class="mu">'+fm(p.price)+'</s><br>':'')+'<b>'+fm(f)+'</b><br><button class="'+(SP===p.id?'on':'')+'" onclick="selP(\''+p.id+'\')">انتخاب</button></div></div>'}).join("")||'<p class="mu">'+(PL?'پلنی در دسترس نیست.':'در حال دریافت پلن‌ها... (نیاز به اینترنت)')+'</p>';
  var ch=[["sms","پیامک"],["wa","واتس‌اپ"],["eitaa","ایتا"],["rubika","روبیکا"],["tg","تلگرام"]].filter(function(k){return c[k[0]]}).map(function(k,i){return '<button class="'+(i?'g':'')+'" onclick="sendP(\''+k[0]+'\')">ارسال با '+k[1]+'</button>'}).join("");
- var pay=x?box("",'<h2>پرداخت: '+esc(x.n)+'</h2><p>مبلغ قابل پرداخت: '+(fp(x)<x.price?'<s class="mu">'+fm(x.price)+'</s> ':'')+'<b>'+fm(fp(x))+'</b></p><p class="mu">مبلغ را کارت‌به‌کارت کن، سپس سه کادر پایین را پر کن.</p>'+
+ var pay=x?box("",'<h2>۲. پرداخت: '+esc(x.n)+'</h2><p>مبلغ قابل پرداخت: '+(fp(x)<x.price?'<s class="mu">'+fm(x.price)+'</s> ':'')+'<b>'+fm(fp(x))+'</b></p><p class="mu">مبلغ را کارت‌به‌کارت کن، سپس سه کادر پایین را پر کن.</p>'+
   (cs.map(function(k){return '<div class="row"><div><b>'+esc(k.h)+'</b> · '+esc(k.b)+'<small class="ltr">'+esc(k.num)+'</small></div><button class="g" onclick="cp(this)" data-t="'+esc(en(k.num))+'">کپی</button></div>'}).join("")||'<p class="er">مدیر هنوز کارتی ثبت نکرده.</p>')+
-  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(PV.pa||"")+'" oninput="fi(this);PV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(PV.pd||"")+'" oninput="PV.pd=this.value"><input id="ph2" placeholder="ساعت واریز" value="'+esc(PV.pt||"")+'" oninput="PV.pt=this.value"></div><p class="mu">کد دستگاه ('+D.dev+') خودکار همراه پیام ارسال می‌شود.</p><div class="ch">'+(ch||'<span class="er">مدیر راه تماسی تعریف نکرده.</span>')+'</div><p id="pm" class="mu"></p>'):'';
- var pend=D.pend?box("",'<h2 class="ok">درخواست ارسال شد</h2><p>پلن «'+esc(D.pend.plan)+'» · '+fm(D.pend.price)+'<br>منتظر تأیید مدیر و کد فعال‌سازی هستی. کد را در بخش «کد فعال‌سازی» وارد کن.</p><button class="g" onclick="D.pend=null;sv();A()">لغو / ارسال دوباره</button>'):'';
- return pend+box("",pl)+pay;
+  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(PV.pa||"")+'" oninput="fi(this);PV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(PV.pd||"")+'" oninput="PV.pd=this.value"><input id="ph2" placeholder="ساعت واریز" value="'+esc(PV.pt||"")+'" oninput="PV.pt=this.value"></div><h2 style="margin-top:8px">۳. ارسال برای مدیر</h2><p class="mu">کد دستگاه ('+D.dev+') خودکار همراه پیام ارسال می‌شود. یکی از راه‌های زیر را بزن:</p><div class="ch">'+(ch||'<span class="er">مدیر راه تماسی تعریف نکرده.</span>')+'</div><p id="pm" class="mu"></p>'):'';
+ var pend=D.pend?box("",'<h2 class="ok">درخواست ارسال شد</h2><p>پلن «'+esc(D.pend.plan)+'» · '+fm(D.pend.price)+'<br>منتظر تأیید مدیر و کد فعال‌سازی هستی. کد را در بخش «کد فعال‌سازی» وارد کن.</p><button onclick="go(\'t\',\'sub\',\'ac\')">۴. وارد کردن کد فعال‌سازی ←</button> <button class="g" onclick="D.pend=null;sv();A()">لغو / ارسال دوباره</button>'):'';
+ return pend+box("",'<h2>۱. انتخاب اشتراک</h2>'+pl)+pay;
 }
 function selP(i){SP=i;A();window.scrollTo(0,document.body.scrollHeight/3)}
 function sendP(t){
@@ -378,6 +378,34 @@ NAV.tree=[
   {k:"bk",t:"پشتیبان‌گیری",v:tBk},
   {k:"tx",t:"متن پیام‌ها و رنگ‌ها",v:tTx}]}
 ];
+decorNav(NAV.tree,{"s/ad":1,"s/sv":2,"s/hr":3,"s/ln":4,"s/sv/svn":1,"s/sv/svl":2,"s/hr/hrm":1,"s/hr/hrl":2,"s/hr/hrc":3,"t/sub/st":1,"t/sub/pl":2,"t/sub/ac":3},{
+ "d":"خلاصه‌ی کار امروز. اگر درخواست جدید هست دکمه‌ی سبز را بزن.",
+ "d/ap/today":"نوبت‌های امروز تو.",
+ "d/ap/new":"درخواست‌های مشتری. «تأیید» ساعت را می‌بندد و متن تأیید را آماده می‌کند.",
+ "d/ap/ok":"نوبت‌های تأییدشده. بعد از انجام، «انجام شد» را بزن.",
+ "d/ap/add":"پیام مشتری را بچسبان تا نوبت ساخته شود، یا خودت نوبت دستی ثبت کن.",
+ "d/lk":"لینک را بساز و برای مشتری بفرست. بعد از هر تأیید نوبت یا تغییر ساعت، دوباره بساز.",
+ "d/cal":"روز را بزن تا نوبت‌هایش را ببینی. می‌توانی روز را تعطیل کنی.",
+ "s/ad":"اول آدرس سالن را ثبت کن؛ بعد در هر خدمت انتخابش می‌کنی.",
+ "s/sv/svn":"نام، قیمت، مدت و بیعانه را بنویس. مدت خدمت روی ساعت‌های قابل‌انتخاب مشتری اثر دارد.",
+ "s/sv/svl":"خدمت‌هایت. با «ویرایش» تغییرشان بده.",
+ "s/hr/hrm":"ساعت شروع و پایان و روزهای کاری را بزن، بعد «ساخت ساعت‌ها».",
+ "s/hr/hrl":"روی هر ساعت بزن تا برای مشتری بسته شود.",
+ "s/hr/hrc":"روزهایی که کار نمی‌کنی (مسافرت، مناسبت) را اینجا ثبت کن.",
+ "s/ln":"لینک کانال یا صفحه‌ات را بگذار تا مشتری دنبال کند.",
+ "s/cu":"مشتری‌ها خودکار از نوبت‌ها ساخته می‌شوند. برای هرکدام یادداشت بنویس.",
+ "s/pv":"صفحه‌ای که مشتری می‌بیند را اینجا امتحان کن.",
+ "t/pf":"نامی که اینجا بنویسی بالای صفحه و در صفحه مشتری نشان داده می‌شود.",
+ "t/sub/st":"کد دستگاه را برای دریافت کد فعال‌سازی به مدیر بده.",
+ "t/sub/pl":"۱) اشتراک را انتخاب کن ۲) کارت‌به‌کارت کن ۳) سه کادر واریز را پر کن و برای مدیر بفرست ۴) منتظر کد بمان.",
+ "t/sub/ac":"کدی که مدیر فرستاد را اینجا بچسبان.",
+ "t/sub/tr":"دوره‌ی رایگان فقط یک‌بار برای هر دستگاه است.",
+ "t/pay":"کارتی که مشتری برای بیعانه می‌بیند. در هر خدمت انتخاب می‌کنی کدام نمایش داده شود.",
+ "t/ms":"پیامت را بنویس و از راه‌های مدیر بفرست.",
+ "t/ins":"برنامه را روی صفحه‌ی گوشی نصب کن یا به دوستانت معرفی کن.",
+ "t/bk":"هفته‌ای یک‌بار پشتیبان بگیر و فایلش را جای امن نگه دار.",
+ "t/tx":"متن پیام‌هایی که برای مشتری ساخته می‌شود و رنگ برنامه را اینجا عوض کن."
+});
 NAV.path=["d"];NAV.draw=function(){A()};
 function head(){
  var st=actv()?'<span class="badge ok">● فعال'+(ST.kind==="trial"?" (رایگان)":"")+' · '+fn(left())+' روز</span>':'<span class="badge er">غیرفعال</span>';
@@ -385,17 +413,15 @@ function head(){
 }
 function A(){
  var p=NAV.path,lock=!actv()&&!(p[0]==="t"&&(p[1]==="sub"||p[1]==="bk"));
- if(lock)NAV.path=["t","sub","st"];
+ if(lock)NAV.path=["t","sub","pl"];
  if(NAV.path[0]==="t"&&NAV.path[1]==="sub"&&!PL)loadPlans();
  if(NAV.path[1]==="ms"&&!PL)loadPlans();
  var nv=navHtml(),n=nv.last,body="";
  if(!actv()&&!D.trial&&!ST.exp)body='';
  body=n&&n.v?n.v():(n&&n.ch?'':'');
  var warn=!actv()?'<div class="c er">اشتراک فعال نیست. برای استفاده از بخش‌های دیگر، اشتراک را فعال کن (دوره رایگان، یا کد فعال‌سازی).</div>':"";
- app.innerHTML=head()+warn+nv.nav+(lock?'':nv.menu)+(lock?menuLocked():'')+body;
+ app.innerHTML=head()+warn+nv.nav+nv.menu+nv.tip+body;
 }
-function menuLocked(){return '<div class="menu"><button class="mi" style="opacity:.9">'+'<span class="t">فقط اشتراک و پشتیبان‌گیری باز است</span></button></div>'+subMenu()}
-function subMenu(){var sub=nfind(nfind(NAV.tree,"t").ch,"sub"),cur=NAV.path[2];return '<div class="menu lv1">'+sub.ch.map(function(c){return '<button class="mi'+(cur===c.k?' on':'')+'" onclick="go(\'t\',\'sub\',\''+c.k+'\')"><span class="t">'+c.t+'</span></button>'}).join("")+'</div>'}
 
 /* ================= صفحه مشتری ================= */
 function okSlot(d,t,x){
@@ -413,12 +439,12 @@ function C(){
  var tm=(x&&sel.d)?C0.days[sel.d].filter(function(t){return okSlot(sel.d,t,x)}):[];
  app.innerHTML=(location.hash.length<=10?'<button class="g" onclick="mode=\'a\';A()">← بازگشت به پنل</button>':'')+'<h1>'+esc(C0.name||"رزرو نوبت")+'</h1>'+
  (!S.length?box("","فعلاً خدمتی تعریف نشده."):
- box("",'<h2>۱. خدمت</h2><div class="ch">'+S.map(function(y,i){return '<button class="'+(sel.s===i?'on':'')+'" onclick="pk(\'s\','+i+')">'+esc(y.n)+'</button>'}).join("")+'</div>'+
+ box("",'<h2>۱. خدمت</h2><p class="mu">اول خدمت را انتخاب کن.</p><div class="ch">'+S.map(function(y,i){return '<button class="'+(sel.s===i?'on':'')+'" onclick="pk(\'s\','+i+')">'+esc(y.n)+'</button>'}).join("")+'</div>'+
  (x?'<p><b>'+fm(fp(x))+'</b>'+(fp(x)<x.price?' <s class="mu">'+fm(x.price)+'</s>':'')+' · '+fn(x.min||0)+' دقیقه · بیعانه '+fm(x.dep||0)+'</p>'+(dtx(x)?'<p class="ok">'+dtx(x)+'</p>':'')+(x.note?'<p class="mu">'+esc(x.note)+'</p>':'')+(x.steps&&x.steps.length?'<ol class="mu">'+x.steps.map(function(s){return '<li>'+esc(s)+'</li>'}).join("")+'</ol>':''):'')))+
- (x?adc(x):'')+(x?box("",'<h2>۲. روز و ساعت</h2>'+(dk.length?'<div class="ch">'+dk.map(function(d){return '<button class="'+(sel.d===d?'on':'')+'" onclick="pk(\'d\',\''+d+'\')">'+fd(d)+'</button>'}).join("")+'</div>':'<p class="er">فعلاً زمان خالی برای این خدمت نیست.</p>')+(sel.d?'<div class="ch">'+tm.map(function(t){return '<button class="'+(sel.t===t?'on':'')+'" onclick="pk(\'t\',\''+t+'\')">'+t+'</button>'}).join("")+'</div>':'')):'')+
- (x?box("",'<h2>۳. واریز</h2><div class="ch"><button class="'+(sel.pt==="dep"?'on':'')+'" onclick="pk(\'pt\',\'dep\')">بیعانه</button><button class="'+(sel.pt==="full"?'on':'')+'" onclick="pk(\'pt\',\'full\')">مبلغ کل</button></div><p>مبلغ: <b>'+fm(sel.pt==="dep"?(x.dep||0):fp(x))+'</b></p>'+(cd||'<p class="mu">کارتی نمایش داده نمی‌شود.</p>')+
+ (x?adc(x):'')+(x?box("",'<h2>۲. روز</h2><p class="mu">روزی که می‌خواهی بیایی را بزن.</p>'+(dk.length?'<div class="ch">'+dk.map(function(d){return '<button class="'+(sel.d===d?'on':'')+'" onclick="pk(\'d\',\''+d+'\')">'+fd(d)+'</button>'}).join("")+'</div>':'<p class="er">فعلاً زمان خالی برای این خدمت نیست.</p>')):'')+(x&&sel.d?box("",'<h2>۳. ساعت</h2><p class="mu">فقط ساعت‌هایی نشان داده می‌شود که برای مدت این خدمت خالی است.</p><div class="ch">'+tm.map(function(t){return '<button class="'+(sel.t===t?'on':'')+'" onclick="pk(\'t\',\''+t+'\')">'+t+'</button>'}).join("")+'</div>'):'')+
+ (x&&sel.t?box("",'<h2>۴. واریز</h2><p class="mu">مبلغ را به یکی از کارت‌ها بزن، بعد سه کادر پایین را پر کن.</p><div class="ch"><button class="'+(sel.pt==="dep"?'on':'')+'" onclick="pk(\'pt\',\'dep\')">بیعانه</button><button class="'+(sel.pt==="full"?'on':'')+'" onclick="pk(\'pt\',\'full\')">مبلغ کل</button></div><p>مبلغ: <b>'+fm(sel.pt==="dep"?(x.dep||0):fp(x))+'</b></p>'+(cd||'<p class="mu">کارتی نمایش داده نمی‌شود.</p>')+
  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(cv("pa"))+'" oninput="fi(this);CV.pa=this.value"><input id="pd" placeholder="تاریخ واریز" value="'+esc(cv("pd"))+'" oninput="CV.pd=this.value"><input id="pt" placeholder="ساعت واریز" value="'+esc(cv("pt"))+'" oninput="CV.pt=this.value"></div>'):'')+
- (x?box("",'<h2>۴. مشخصات شما</h2><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value"><div class="ch"><button onclick="snd(\'sms\')">ارسال با پیامک</button><button onclick="snd(\'wa\')">واتس‌اپ</button><button class="g" onclick="snd(\'ei\')">ایتا</button><button class="g" onclick="snd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p>'):'')+
+ (x&&sel.t?box("",'<h2>۵. مشخصات و ارسال</h2><p class="mu">با یکی از راه‌ها برای سالن بفرست.</p><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value"><div class="ch"><button onclick="snd(\'sms\')">ارسال با پیامک</button><button onclick="snd(\'wa\')">واتس‌اپ</button><button class="g" onclick="snd(\'ei\')">ایتا</button><button class="g" onclick="snd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p>'):'')+
  ((C0.links||[]).length?box("",'<h2>ما را دنبال کنید</h2>'+C0.links.map(function(l){return '<div class="row"><div><b>'+esc(l.t)+'</b><small>'+plat(l.pl)+'</small></div><button class="g" onclick="window.open(\''+esc(l.u)+'\',\'_blank\')">عضویت / مشاهده</button></div>'}).join("")):'');
 }
 function pk(k,v){sel[k]=v;if(k==="s"){sel.pt="dep";sel.d=null;sel.t=null}if(k==="d")sel.t=null;C()}

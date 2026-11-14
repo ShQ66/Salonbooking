@@ -27,6 +27,7 @@ button:disabled{opacity:.4}
 .row:last-child{border-bottom:0}
 .row small{display:block;color:var(--mu)}
 .ltr{direction:ltr;text-align:left;word-break:break-all;font-size:12px}
+input.ltr,textarea.ltr{font-size:14px}
 .hd{display:flex;align-items:center;gap:10px}.hd h1{flex:1;margin:0}
 .badge{font-size:12px;padding:2px 10px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
 /* منوی آبشاری */
@@ -57,6 +58,8 @@ button:disabled{opacity:.4}
 .st-new{color:var(--wn)}.st-ok{color:var(--in)}.st-done{color:var(--ok)}.st-rej{color:var(--er)}
 #qr{display:flex;justify-content:center;padding:8px;background:#fff;border-radius:10px;width:max-content;margin:8px auto}
 #qr svg{width:180px;height:180px}
+/* راهنمای کوتاه کنار منو */
+.tip{background:var(--card);border:1px dashed var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13px;color:var(--mu)}
 hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 .pre{white-space:pre-wrap;background:var(--bg);border:1px dashed var(--bd);border-radius:10px;padding:8px;font-size:13px}
 @media print{.tabs,.menu,button{display:none}}
