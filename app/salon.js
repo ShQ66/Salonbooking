@@ -329,7 +329,7 @@ function mkL(){
  Promise.all([zip(packPub(pub(true))),zip(packPub(pub(false)))]).then(function(r){
   var u=base+"#"+r[0],q=base+"#"+r[1];
   window._lt=(dname()?dname()+": ":"")+"رزرو نوبت از این لینک:\n"+u;window._qu=q;
-  lo.innerHTML='<div class="ltr" style="max-height:60px;overflow:auto;margin:8px 0">'+esc(u)+'</div>'+shareBtns("window._lt","''")+'<div id="qr"></div><p class="mu" id="qm"></p><button class="g" onclick="dlq()">دانلود QR</button>';
+  lo.innerHTML='<p class="mu">لینک ساخته شد (طولانی است و فقط با دکمه‌ها فرستاده می‌شود).</p>'+shareBtns("window._lt","''")+'<div id="qr"></div><p class="mu" id="qm"></p><button class="g" onclick="dlq()">دانلود QR</button>';
   try{$("qr").innerHTML=qrSvg(q);$("qm").textContent=D.logo?"QR بدون لوگو ساخته می‌شود تا کوچک و قابل اسکن بماند؛ لینک متنی لوگو دارد.":""}catch(x){$("qr").style.display="none";$("qm").textContent="اطلاعات برای QR زیاد است (خدمت یا ساعت زیاد)؛ لینک متنی را بفرست."}
  }).catch(function(){lo.innerHTML='<p class="er">ساخت لینک ناموفق بود.</p>'});
 }
@@ -583,13 +583,13 @@ function snd(t){
  var pl={s:x.n,i:x.id,d:sel.d,t:sel.t,n:CV.cn,p:ph,k:sel.pt,a:CV.pa||"",pd:CV.pd||"",pt:CV.pt||""};
  var y0=function(d){return d?d.slice(2).replace(/-/g,""):""},h0=function(v){return(v||"").replace(":","")},a0=J.en(CV.pa||"").replace(/\D/g,"");
  var cs0=x.id.slice(0,6)+"|"+y0(sel.d)+"|"+h0(sel.t)+"|"+CV.cn.replace(/[|\n]/g," ").trim().slice(0,20)+"|"+ph+"|"+(sel.pt==="dep"?"d":"f")+a0+(CV.pd?"|"+y0(CV.pd)+(CV.pt?"|"+h0(CV.pt):""):"");
- var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd?fdw(CV.pd):"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nثبت در پنل سالن (لینک):\n"+location.href.split("#")[0]+"#n="+b2u(new TextEncoder().encode(cs0));
+ var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd?fdw(CV.pd):"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nکد ثبت در پنل سالن (کپی کن و در پنل بچسبان):\nSB3|"+cs0;
  var sp=(C0.phone||"").replace(/\D/g,"");
  if(t==="auto"){autoSend("b",txt,m,"✓ درخواست نوبت برای سالن ارسال شد؛ منتظر تأیید باش.");return}
  if(t==="sms"){
   var y=function(d){return d?d.slice(2).replace(/-/g,""):""},hm=function(v){return(v||"").replace(":","")},am=J.en(CV.pa||"").replace(/\D/g,"");
   var cs=x.id.slice(0,6)+"|"+y(sel.d)+"|"+hm(sel.t)+"|"+CV.cn.replace(/[|\n]/g," ").trim().slice(0,20)+"|"+ph+"|"+(sel.pt==="dep"?"d":"f")+am+(CV.pd?"|"+y(CV.pd)+(CV.pt?"|"+hm(CV.pt):""):"");
-  txt="SalonBook\n"+location.href.split("#")[0]+"#n="+b2u(new TextEncoder().encode(cs));
+  txt="SB3|"+cs;
  }
  if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
