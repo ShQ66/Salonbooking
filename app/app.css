@@ -66,9 +66,11 @@ input.ltr,textarea.ltr{font-size:14px}
 .lgi{max-height:60px;max-width:150px;border-radius:10px;object-fit:contain}
 .hdl{display:flex;align-items:center;gap:10px}
 .stars{display:flex;gap:6px;margin:6px 0}.stars button{background:var(--bg);color:var(--mu);border:1px solid var(--bd);font-size:20px;padding:4px 10px}.stars button.on{color:#e0a100;border-color:#e0a100}
+button.sms{background:var(--ac);color:var(--acx);font-weight:800;flex:1 1 100%;padding:12px}
+button.in{background:var(--in);color:#fff}
 .st-new{color:var(--wn)}.st-ok{color:var(--in)}.st-done{color:var(--ok)}.st-rej{color:var(--er)}
-#qr{display:flex;justify-content:center;padding:8px;background:#fff;border-radius:10px;width:max-content;margin:8px auto}
-#qr svg{width:180px;height:180px}
+#qr,#qrl{display:flex;justify-content:center;padding:8px;background:#fff;border-radius:10px;width:max-content;margin:8px auto}
+#qr svg,#qrl svg{width:180px;height:180px}
 /* راهنمای کوتاه کنار منو */
 .tip{background:var(--card);border:1px dashed var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13px;color:var(--mu)}
 hr{border:0;border-top:1px solid var(--bd);margin:12px 0}

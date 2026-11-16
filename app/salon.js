@@ -9,15 +9,20 @@ var THEMES=["#b4456b","#8e44ad","#2f6fb5","#1f8a5b","#c0392b","#d35400","#34495e
 var D={name:"",fn:"",ln:"",nick:"",addrs:[],phone:"",services:[],cards:[],links:[],days:{},logo:"",lside:"r",rv:[],gd:{},dev:rnd8(),codes:[],trial:null,last:td(),used:[],
  ap:[],cu:[],cn:{},closed:[],msg:{},theme:"",hs:{from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]}};
 try{var s0=localStorage.getItem("sal");if(s0)D=Object.assign(D,JSON.parse(s0))}catch(e){}
-D.msg=D.msg||{};if(!D.sid){D.sid=rk(12);D.stk=rk(32)}D.hs=Object.assign({from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]},D.hs||{});D.gd=D.gd||{};D.rv=D.rv||[];
+D.msg=D.msg||{};if(!D.sid){D.sid=rk(12);D.stk=rk(32)}
+var CHS=[["sms","📱 پیامک"],["auto","⚡ ثبت خودکار (اینترنتی)"],["wa","واتس‌اپ"],["ei","ایتا"],["cp","روبیکا (کپی متن)"]];
+D.ch=(D.ch||[]).filter(function(c){return CHS.some(function(h){return h[0]===c.k})});
+CHS.forEach(function(h){if(!D.ch.some(function(c){return c.k===h[0]}))D.ch.push({k:h[0],on:1})});D.hs=Object.assign({from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]},D.hs||{});D.gd=D.gd||{};D.rv=D.rv||[];
 function rk(n){var c="abcdefghijkmnpqrstuvwxyz23456789",a=new Uint8Array(n),r="",i;crypto.getRandomValues(a);for(i=0;i<n;i++)r+=c[a[i]%c.length];return r}
-function sv(){try{localStorage.setItem("sal",JSON.stringify(D))}catch(e){}}
+function svRaw(){try{localStorage.setItem("sal",JSON.stringify(D))}catch(e){}}
+function sv(){svRaw();if(typeof pbSched==="function")pbSched()}
 var PL=null,PUB=null,MG={},SP=null,PV={},TR=null,IP=null,ST={exp:"",kind:""},PK=null,AM=null,CM=null,CV={},C0=null;
 try{PUB=JSON.parse(localStorage.getItem("pub"))}catch(e){}
 var mode="a",sel={s:null,d:null,t:null,pt:"dep"};
 var hh=location.hash.slice(1);
 var NH=hh.slice(0,2)==="n="?hh.slice(2):"";
-var HASHP=hh.length>10&&!NH?unzip(hh):null;
+var LV=hh.slice(0,2)==="s="?hh.slice(2).replace(/[^A-Za-z0-9]/g,""):"";
+var HASHP=LV?fetchSnap(LV):(hh.length>10&&!NH?unzip(hh):null);
 if(D.last<td())D.last=td();
 function dname(){return D.nick||((D.fn||"")+" "+(D.ln||"")).trim()}
 if(dname()&&!D.fn&&!D.nick)D.nick=dname();
@@ -305,10 +310,17 @@ function tDash(){
 function pub(withLogo){
  autoGen();
  var days={};Object.keys(D.days).forEach(function(d){if(d>=td()&&D.closed.indexOf(d)<0)days[d]=D.days[d]});
- return{sid:(typeof API!=="undefined"&&API)?D.sid:undefined,name:dname(),phone:D.phone,th:D.theme||"",st:D.hs.step||30,ls:D.lside||"r",lg:(withLogo&&D.logo)?D.logo:undefined,services:D.services.filter(function(x){return x.on}),cards:D.cards.map(function(c){return c.on?c:null}),addrs:D.addrs.map(function(c){return c.on?c:null}),links:D.links,days:days};
+ return{ch:D.ch.filter(function(c){return c.on}).map(function(c){return c.k}),sid:(typeof API!=="undefined"&&API)?D.sid:undefined,name:dname(),phone:D.phone,th:D.theme||"",st:D.hs.step||30,ls:D.lside||"r",lg:(withLogo&&D.logo)?D.logo:undefined,services:D.services.filter(function(x){return x.on}),cards:D.cards.map(function(c){return c.on?c:null}),addrs:D.addrs.map(function(c){return c.on?c:null}),links:D.links,days:days};
 }
 function tLk(){
- return box("",'<button onclick="mkL()">ساخت لینک و QR</button> <button class="g" onclick="preview()">پیش‌نمایش</button><div id="lo"></div><p class="mu">لینک عکسی از ساعت‌های خالی همین لحظه است. بعد از هر تأیید نوبت یا تغییر ساعت‌ها، دوباره بساز و بفرست.</p>');
+ var live="";
+ if(hasApi()){
+  window._lv=(dname()?dname()+": ":"")+"رزرو نوبت از این لینک:\n"+liveUrl();
+  var q="";try{q=qrSvg(liveUrl())}catch(e){}
+  live=box("",'<h2>لینک ثابت رزرو (پیشنهادی)</h2><p class="mu">این لینک همیشه یکی است. هر تغییری در خدمات، ساعت‌ها و نوبت‌ها خودکار در آن اعمال می‌شود؛ پس یک بار در بیو یا کانال بگذار یا بفرست و لازم نیست دوباره بسازی. مشتری باید اینترنت داشته باشد.</p><div class="ltr" style="margin:8px 0">'+esc(liveUrl())+'</div>'+shareBtns("window._lv","''")+(q?'<div id="qrl">'+q+'</div>':'')+'<p class="mu" id="pbs">'+esc(PB.st||(D.pbt?"آخرین انتشار موفق ثبت شده است.":"هنوز منتشر نشده؛ چند ثانیه صبر کن یا انتشار دستی را بزن."))+'</p><button class="g" onclick="pbNow(true).then(function(){var e=$(\'pbs\');if(e)e.textContent=PB.st})">انتشار دستی همین حالا</button>');
+  setTimeout(function(){ibReg();pbNow()},200);
+ }
+ return live+box("",'<h2>'+(hasApi()?'لینک بدون اینترنت (ثابت)':'لینک رزرو')+'</h2><button onclick="mkL()">ساخت لینک و QR</button> <button class="g" onclick="preview()">پیش‌نمایش</button><div id="lo"></div><p class="mu">لینک عکسی از ساعت‌های خالی همین لحظه است و با تغییر خدمت یا ساعت باید دوباره ساخته شود.</p>')
 }
 function mkL(){
  ibReg();
@@ -423,6 +435,12 @@ function tIns(){
 }
 function tBk(){return box("",'<p class="mu">'+(D.lb?"آخرین پشتیبان: "+fdl(D.lb):"هنوز پشتیبان نگرفته‌ای.")+'</p><p class="mu">اطلاعات فقط داخل مرورگر همین دستگاه است. هفته‌ای یک‌بار پشتیبان بگیر و فایل را در روبیکا یا ایتای خودت ذخیره کن.</p><button onclick="D.lb=td();sv();dl(\'salon-backup.json\',JSON.stringify(D));A()">دانلود پشتیبان</button> <button class="g" onclick="$(\'bf\').click()">بازیابی از فایل</button><input type="file" id="bf" accept=".json" style="display:none" onchange="rs(this)">')}
 function rs(el){var f=el.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(!o||!o.services&&!o.ap&&!o.hs)throw 0;if(!confirm("اطلاعات فعلی با فایل پشتیبان جایگزین شود؟"))return;["name","fn","ln","nick","phone","addrs","services","cards","links","days","ap","cu","cn","closed","msg","theme","hs","logo","lside","rv","gd","sid","stk"].forEach(function(k){if(o[k]!=null)D[k]=o[k]});if(o.dev===D.dev){if(o.codes)D.codes=o.codes;if(o.trial)D.trial=o.trial}sv();setTheme(D.theme);alert("بازیابی شد.");verifyAll().then(A)}catch(e){alert("فایل معتبر نیست.")}};r.readAsText(f)}
+function chTog(i){D.ch[i].on=D.ch[i].on?0:1;sv();A()}
+function chMv(i,d){var j=i+d;if(j<0||j>=D.ch.length)return;var t=D.ch[i];D.ch[i]=D.ch[j];D.ch[j]=t;sv();A()}
+function tCh(){
+ var nm={};CHS.forEach(function(h){nm[h[0]]=h[1]});
+ return box("",'<p class="mu">راه‌هایی که مشتری برای ارسال درخواست می‌بیند. ترتیب لیست همان ترتیب نمایش است؛ پیامک بهتر است اول باشد. هر کدام را که نمی‌خواهی خاموش کن.</p>'+D.ch.map(function(c,i){return'<div class="row"><label><input type="checkbox" '+(c.on?"checked":"")+' onchange="chTog('+i+')"> '+nm[c.k]+'</label><span><button class="g" onclick="chMv('+i+',-1)">▲</button> <button class="g" onclick="chMv('+i+',1)">▼</button></span></div>'}).join("")+'<p class="mu">بعد از تغییر، لینک رزرو را دوباره بساز.</p>')
+}
 function tTx(){
  var ms=[["ok","پیام تأیید نوبت"],["rej","پیام رد / زمان دیگر"],["rem","پیام یادآوری"]].map(function(k){return '<span class="mu">'+k[1]+'</span><textarea rows="3" oninput="D.msg.'+k[0]+'=this.value;sv()">'+esc(msgT(k[0]))+'</textarea>'}).join("");
  return box("",ms+'<p class="mu">جای‌نگهدار: {name} نام مشتری، {service} خدمت، {date} تاریخ، {time} ساعت، {salon} نام سالن، {addr} آدرس.</p><button class="g" onclick="if(confirm(\'متن‌ها به حالت اول برگردد؟\')){D.msg={};sv();A()}">بازگشت به متن پیش‌فرض</button>')+
@@ -453,6 +471,7 @@ NAV.tree=[
   {k:"pf",t:"مشخصات",v:tPf},
   {k:"sub",t:"اشتراک",ch:[{k:"st",t:"وضعیت و کد دستگاه",v:tSt},{k:"pl",t:"پلن‌ها و پرداخت",v:tPl},{k:"ac",t:"کد فعال‌سازی",v:tAc},{k:"tr",t:"دوره‌ی رایگان",v:tTr}]},
   {k:"pay",t:"پرداخت از مشتری",v:tK},
+  {k:"ch",t:"راه‌های دریافت نوبت",v:tCh},
   {k:"ms",t:"پیام به مدیر",v:tMs},
   {k:"fb",t:"پیشنهاد و رضایت‌سنجی",v:tFb},
   {k:"bk",t:"پشتیبان‌گیری",v:tBk},
@@ -521,15 +540,15 @@ function C(){
  var cv=function(i){return CV[i]||""};
  var cd="";if(x){cd=(x.cards||[]).map(function(i){return(C0.cards||[])[i]}).filter(Boolean).map(function(c){return '<div class="row"><div><b>'+esc(c.h)+'</b> · '+esc(c.b)+'<small class="ltr">'+esc(c.num)+'</small></div><button class="g" onclick="cp(this)" data-t="'+esc(en(c.num))+'">کپی</button></div>'}).join("")}
  var tm=(x&&sel.d)?C0.days[sel.d].filter(function(t){return okSlot(sel.d,t,x)}):[];
- app.innerHTML=(location.hash.length<=10?'<button class="g" onclick="mode=\'a\';A()">← بازگشت به پنل</button>':'')+'<div class="hdl">'+(C0.lg&&C0.ls!=="l"?'<img class="lgi" src="'+esc(C0.lg)+'" alt="">':'')+'<h1>'+esc(C0.name||"رزرو نوبت")+'</h1>'+(C0.lg&&C0.ls==="l"?'<img class="lgi" src="'+esc(C0.lg)+'" alt="">':'')+'</div>'+
+ app.innerHTML=(C0._stale?'<div class="tip">اتصال اینترنت برقرار نشد؛ اطلاعات ذخیره‌شده‌ی قبلی نشان داده می‌شود و ممکن است قدیمی باشد.</div>':'')+(location.hash.length<=10?'<button class="g" onclick="mode=\'a\';A()">← بازگشت به پنل</button>':'')+'<div class="hdl">'+(C0.lg&&C0.ls!=="l"?'<img class="lgi" src="'+esc(C0.lg)+'" alt="">':'')+'<h1>'+esc(C0.name||"رزرو نوبت")+'</h1>'+(C0.lg&&C0.ls==="l"?'<img class="lgi" src="'+esc(C0.lg)+'" alt="">':'')+'</div>'+
  (!S.length?box("","فعلاً خدمتی تعریف نشده."):
  box("",'<h2>۱. خدمت</h2><p class="mu">اول خدمت را انتخاب کن.</p><div class="ch">'+S.map(function(y,i){return '<button class="'+(sel.s===i?'on':'')+'" onclick="pk(\'s\','+i+')">'+esc(y.n)+'</button>'}).join("")+'</div>'+
  (x?'<p><b>'+fm(fp(x))+'</b>'+(fp(x)<x.price?' <s class="mu">'+fm(x.price)+'</s>':'')+' · '+fn(x.min||0)+' دقیقه · بیعانه '+fm(x.dep||0)+'</p>'+(dtx(x)?'<p class="ok">'+dtx(x)+'</p>':'')+(x.note?'<p class="mu">'+esc(x.note)+'</p>':'')+(x.steps&&x.steps.length?'<ol class="mu">'+x.steps.map(function(s){return '<li>'+esc(s)+'</li>'}).join("")+'</ol>':''):'')))+
  (x?adc(x):'')+(x?box("",'<h2>۲. روز</h2><p class="mu">روزی که می‌خواهی بیایی را بزن.</p>'+(dk.length?'<div class="ch">'+dk.map(function(d){return '<button class="'+(sel.d===d?'on':'')+'" onclick="pk(\'d\',\''+d+'\')">'+fd(d)+'</button>'}).join("")+'</div>':'<p class="er">فعلاً زمان خالی برای این خدمت نیست.</p>')):'')+(x&&sel.d?box("",'<h2>۳. ساعت</h2><p class="mu">فقط ساعت‌هایی نشان داده می‌شود که برای مدت این خدمت خالی است.</p><div class="ch">'+tm.map(function(t){return '<button class="'+(sel.t===t?'on':'')+'" onclick="pk(\'t\',\''+t+'\')">'+t+'</button>'}).join("")+'</div>'):'')+
  (x&&sel.t?box("",'<h2>۴. واریز</h2><p class="mu">مبلغ را به یکی از کارت‌ها بزن، بعد سه کادر پایین را پر کن.</p><div class="ch"><button class="'+(sel.pt==="dep"?'on':'')+'" onclick="pk(\'pt\',\'dep\')">بیعانه</button><button class="'+(sel.pt==="full"?'on':'')+'" onclick="pk(\'pt\',\'full\')">مبلغ کل</button></div><p>مبلغ: <b>'+fm(sel.pt==="dep"?(x.dep||0):fp(x))+'</b></p>'+(cd||'<p class="mu">کارتی نمایش داده نمی‌شود.</p>')+
  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(cv("pa"))+'" oninput="fi(this);CV.pa=this.value"></div><span class="mu">تاریخ و ساعت واریز</span><div class="r">'+jd("pd",cv("pd"),{cb:"CV.pd=jv('pd')"})+'<input id="pt" type="time" value="'+esc(cv("pt"))+'" oninput="CV.pt=this.value"></div>'):'')+
- (x&&sel.t?box("",'<h2>۵. مشخصات و ارسال</h2><p class="mu">با یکی از راه‌ها برای سالن بفرست.</p><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value"><div class="ch">'+(C0.sid&&hasApi()?'<button class="ok2" onclick="snd(\'auto\')">ثبت نوبت (خودکار)</button>':'')+'<button onclick="snd(\'sms\')">ارسال با پیامک</button><button onclick="snd(\'wa\')">واتس‌اپ</button><button class="g" onclick="snd(\'ei\')">ایتا</button><button class="g" onclick="snd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p>'):'')+
- (S.length?box("",'<h2>نظر و امتیاز شما (اختیاری)</h2><p class="mu">اگر از خدمت راضی بودی یا پیشنهادی داری، برای سالن بفرست.</p>'+stars(RV.r,"rvR")+'<textarea rows="3" placeholder="نظر یا پیشنهاد شما" oninput="RV.c=this.value">'+esc(RV.c)+'</textarea><div class="ch">'+(C0.sid&&hasApi()?'<button class="ok2" onclick="rvSnd(\'auto\')">ارسال نظر (خودکار)</button>':'')+'<button onclick="rvSnd(\'sms\')">ارسال با پیامک</button><button onclick="rvSnd(\'wa\')">واتس‌اپ</button><button class="g" onclick="rvSnd(\'ei\')">ایتا</button><button class="g" onclick="rvSnd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="fm"></p>'):'')+
+ (x&&sel.t?box("",'<h2>۵. مشخصات و ارسال</h2><p class="mu">با یکی از راه‌ها برای سالن بفرست.</p><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value">'+chBtns("snd","ثبت نوبت (اینترنتی)")+'<p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p>'):'')+
+ (S.length?box("",'<h2>نظر و امتیاز شما (اختیاری)</h2><p class="mu">اگر از خدمت راضی بودی یا پیشنهادی داری، برای سالن بفرست.</p>'+stars(RV.r,"rvR")+'<textarea rows="3" placeholder="نظر یا پیشنهاد شما" oninput="RV.c=this.value">'+esc(RV.c)+'</textarea>'+chBtns("rvSnd","ارسال نظر (اینترنتی)")+'<p class="mu" id="fm"></p>'):'')+
  ((C0.links||[]).length?box("",'<h2>ما را دنبال کنید</h2>'+C0.links.map(function(l){return '<div class="row"><div><b>'+esc(l.t)+'</b><small>'+plat(l.pl)+'</small></div><button class="g" onclick="window.open(\''+esc(l.u)+'\',\'_blank\')">عضویت / مشاهده</button></div>'}).join("")):'');
 }
 var RV={r:0,c:""};
@@ -544,6 +563,12 @@ function rvSnd(t){
  if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
 function pk(k,v){sel[k]=v;if(k==="s"){sel.pt="dep";sel.d=null;sel.t=null}if(k==="d")sel.t=null;C()}
+function chBtns(f,autoLbl){
+ var L=(C0.ch||["sms","auto","wa","ei","cp"]).filter(function(k){return k!=="auto"||(C0.sid&&hasApi())});
+ if(!L.length)return'<p class="mu">سالن هنوز راه ارسالی فعال نکرده؛ با خود سالن تماس بگیر.</p>';
+ var nm={sms:"📱 ارسال با پیامک",auto:"⚡ "+autoLbl,wa:"واتس‌اپ",ei:"ایتا",cp:"کپی (روبیکا)"};
+ return'<div class="ch">'+L.map(function(k){return'<button class="'+(k==="sms"?"sms":k==="auto"?"in":"g")+'" onclick="'+f+'(\''+k+'\')">'+nm[k]+'</button>'}).join("")+'</div>'
+}
 function autoSend(k,txt,m,ok){
  if(m.dataset.b)return;m.dataset.b=1;m.textContent="در حال ارسال...";
  apiP("/in/"+C0.sid,{k:k,x:txt}).then(function(j){
@@ -555,7 +580,9 @@ function snd(t){
  if(!x||!sel.d||!sel.t||!CV.cn||!CV.cp){m.textContent="خدمت، روز، ساعت، نام و موبایل را کامل کن.";return}
  var ph=J.phone(CV.cp);if(!J.phoneOk(ph)){m.textContent="شماره موبایل درست نیست (مثل ۰۹۱۲۳۴۵۶۷۸۹).";return}
  var pl={s:x.n,i:x.id,d:sel.d,t:sel.t,n:CV.cn,p:ph,k:sel.pt,a:CV.pa||"",pd:CV.pd||"",pt:CV.pt||""};
- var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd?fdw(CV.pd):"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nSB1:"+enc(pl).replace(/\+/g,"-").replace(/\//g,"_");
+ var y0=function(d){return d?d.slice(2).replace(/-/g,""):""},h0=function(v){return(v||"").replace(":","")},a0=J.en(CV.pa||"").replace(/\D/g,"");
+ var cs0=x.id.slice(0,6)+"|"+y0(sel.d)+"|"+h0(sel.t)+"|"+CV.cn.replace(/[|\n]/g," ").trim().slice(0,20)+"|"+ph+"|"+(sel.pt==="dep"?"d":"f")+a0+(CV.pd?"|"+y0(CV.pd)+(CV.pt?"|"+h0(CV.pt):""):"");
+ var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd?fdw(CV.pd):"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nثبت در پنل سالن (لینک):\n"+location.href.split("#")[0]+"#n="+b2u(new TextEncoder().encode(cs0));
  var sp=(C0.phone||"").replace(/\D/g,"");
  if(t==="auto"){autoSend("b",txt,m,"✓ درخواست نوبت برای سالن ارسال شد؛ منتظر تأیید باش.");return}
  if(t==="sms"){
@@ -615,6 +642,37 @@ function ibPoll(){
 function ibNow(){ibPoll().then(function(){var e=$("ibs");if(e)e.textContent=IB.st})}
 if(hasApi()){setInterval(function(){if(!document.hidden&&mode==="a")ibPoll()},60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)ibPoll()})}
 
+/* ================= لینک زنده (ثابت): انتشار خودکار اطلاعات سالن ================= */
+var PB={t:null,busy:false,st:""};
+function hs(z){var h=5381,i;for(i=0;i<z.length;i++)h=((h<<5)+h+z.charCodeAt(i))|0;return z.length+":"+h}
+function liveUrl(){return location.href.split("#")[0]+"#s="+D.sid}
+function pbSched(){if(!hasApi()||mode!=="a")return;clearTimeout(PB.t);PB.t=setTimeout(function(){pbNow()},6000)}
+function pbNow(force){
+ if(!hasApi()||PB.busy||mode!=="a"||!actv())return Promise.resolve();
+ PB.busy=true;
+ return zip(packPub(pub(true))).then(function(z){
+  var h=hs(z);
+  if(!force&&D.pbh===h&&D.pbt&&Date.now()-D.pbt<20*864e5)return"same";
+  return Promise.all(apiUrls().map(function(u){
+   var rg=IB.reg[u]?Promise.resolve(true):apiU(u,"/reg/"+D.sid,{t:D.stk}).then(function(j){if(j.ok)IB.reg[u]=1;return!!j.ok});
+   return rg.then(function(ok){return ok?apiU(u,"/pub/"+D.sid,{t:D.stk,d:z}).then(function(j){return!!j.ok}):false}).catch(function(){return false})
+  })).then(function(r){
+   if(r.some(function(x){return x})){D.pbh=h;D.pbt=Date.now();svRaw();PB.st="منتشر شد: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});return"ok"}
+   PB.st="انتشار انجام نشد؛ اینترنت را بررسی کن.";return"fail"
+  })
+ }).catch(function(){PB.st="انتشار انجام نشد."}).then(function(r){PB.busy=false;var e=$("pbs");if(e)e.textContent=PB.st||"";return r})
+}
+function fetchSnap(sid){
+ return apiP("/sn/"+sid,{}).then(function(j){
+  if(!j.ok||!j.d)throw new Error("none");
+  try{localStorage.setItem("snap:"+sid,j.d)}catch(e){}
+  return unzip(j.d)
+ }).catch(function(e){
+  var c=null;try{c=localStorage.getItem("snap:"+sid)}catch(x){}
+  if(c)return unzip(c).then(function(o){o._stale=1;return o});
+  throw e
+ })
+}
 /* باز کردن لینک پیامکِ نوبت در پنل سالن */
 function importLink(){
  var e={},t="https://x/#n="+NH;
@@ -626,5 +684,5 @@ function importLink(){
 window.addEventListener("hashchange",function(){var h=location.hash.slice(1);if(h.slice(0,2)==="n="&&mode==="a"){NH=h.slice(2);importLink()}});
 /* ================= شروع ================= */
 window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();IP=e});
-if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){mode="a";sv();A()})}else{autoGen();sv();A();if(NH)setTimeout(importLink,300);if(PUB)verifyAll().then(A);if(hasApi())setTimeout(ibPoll,1500)}
+if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){if(LV){app.innerHTML='<div class="w"><div class="c"><h1>بارگذاری نشد</h1><p class="mu">اطلاعات سالن گرفته نشد. اینترنت را بررسی کن و دوباره تلاش کن.</p><button onclick="location.reload()">تلاش دوباره</button></div></div>';return}mode="a";sv();A()})}else if(NH&&!(D.services.length||D.name)){app.innerHTML='<div class="w"><div class="c"><h1>این لینک مخصوص سالن است</h1><p class="mu">این پیام برای پنل سالن فرستاده شده است. اگر مشتری هستی، برای رزرو از «لینک رزرو» خود سالن استفاده کن.</p></div></div>'}else{autoGen();sv();A();if(NH)setTimeout(importLink,300);if(PUB)verifyAll().then(A);if(hasApi())setTimeout(ibPoll,1500)}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js")}catch(e){}
