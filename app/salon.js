@@ -62,8 +62,9 @@ function apRow(a){
  if(a.st==="new")b='<button class="ok2" onclick="apOk(\''+a.id+'\')">تأیید</button> <button class="d" onclick="apRej(\''+a.id+'\')">رد / زمان دیگر</button>';
  else if(a.st==="ok")b='<button onclick="apDone(\''+a.id+'\')">انجام شد</button> <button class="g" onclick="apMsg(\''+a.id+'\',\'rem\')">یادآوری</button> <button class="d" onclick="apCancel(\''+a.id+'\')">لغو نوبت</button>';
  else b='<button class="g" onclick="apMsg(\''+a.id+'\',\''+(a.st==="rej"?"rej":"ok")+'\')">پیام</button> <button class="d" onclick="apDel(\''+a.id+'\')">حذف</button>';
+ var cf="";if(a.st==="new"){var o=overlap(a);if(o)cf='<small class="er">⚠ هم‌پوشانی با نوبت «'+esc(o.name||"—")+'» ساعت '+esc(o.time)+'</small>'}
  var pay=a.amt?' · واریز '+fm(en(a.amt)*1||0):'';
- return '<div class="row" style="align-items:flex-start"><div><b>'+esc(a.name||"—")+'</b> · '+esc(a.sn)+' <span class="st-'+a.st+'">('+stName(a.st)+')</span><small>'+fd(a.date)+' · '+esc(a.time)+(a.phone?' · <span class="ltr">'+esc(a.phone)+'</span>':'')+pay+(a.pd?' · '+(/^\d{4}-\d\d-\d\d$/.test(a.pd)?fdl(a.pd):esc(a.pd))+' '+esc(a.ptm||""):'')+'</small><div class="ch" style="margin:4px 0">'+b+'</div></div></div>';
+ return '<div class="row" style="align-items:flex-start"><div><b>'+esc(a.name||"—")+'</b> · '+esc(a.sn)+' <span class="st-'+a.st+'">('+stName(a.st)+')</span><small>'+fd(a.date)+' · '+esc(a.time)+(a.phone?' · <span class="ltr">'+esc(a.phone)+'</span>':'')+pay+(a.pd?' · '+(/^\d{4}-\d\d-\d\d$/.test(a.pd)?fdl(a.pd):esc(a.pd))+' '+esc(a.ptm||""):'')+'</small>'+cf+'<div class="ch" style="margin:4px 0">'+b+'</div></div></div>';
 }
 function msgBox(){
  if(!AM)return"";
@@ -95,29 +96,33 @@ function addSlots(date,time,min){
  D.days[date]=L.sort();
 }
 function overlap(a){
- return D.ap.filter(function(x){return x.id!==a.id&&x.st==="ok"&&x.date===a.date&&J.hm(x.time)<J.hm(a.time)+covers(a)&&J.hm(a.time)<J.hm(x.time)+covers(x)})[0];
+ return D.ap.filter(function(x){return x.id!==a.id&&(x.st==="ok"||x.st==="new")&&x.date===a.date&&J.hm(x.time)<J.hm(a.time)+covers(a)&&J.hm(a.time)<J.hm(x.time)+covers(x)})[0];
 }
 function apOk(id){
  var a=D.ap.filter(function(x){return x.id===id})[0];if(!a)return;
  var o=overlap(a);if(o&&!confirm("این زمان با نوبت «"+o.name+"» ("+o.time+") هم‌پوشانی دارد. باز هم تأیید شود؟"))return;
  a.st="ok";rmSlots(a.date,a.time,a.min);sv();AM={id:id,t:"ok"};A();
 }
-function apRej(id){var a=D.ap.filter(function(x){return x.id===id})[0];if(!a)return;a.st="rej";sv();AM={id:id,t:"rej"};A()}
+function freeUp(a){if(!overlap(a))addSlots(a.date,a.time,a.min)}
+function apRej(id){var a=D.ap.filter(function(x){return x.id===id})[0];if(!a)return;var was=a.st;a.st="rej";if(was==="new")freeUp(a);sv();AM={id:id,t:"rej"};A()}
 function apDone(id){D.ap.forEach(function(a){if(a.id===id)a.st="done"});sv();A()}
 function apCancel(id){if(!confirm("نوبت لغو شود و ساعتش دوباره خالی شود؟"))return;var a=D.ap.filter(function(x){return x.id===id})[0];if(!a)return;a.st="rej";addSlots(a.date,a.time,a.min);sv();AM={id:id,t:"rej"};A()}
-function apDel(id){if(!confirm("حذف شود؟"))return;D.ap=D.ap.filter(function(a){return a.id!==id});sv();A()}
-function svcByName(n,i){return D.services.filter(function(x){return x.id===i})[0]||D.services.filter(function(x){return x.n===n})[0]}
+function apDel(id){if(!confirm("حذف شود؟"))return;var q=D.ap.filter(function(x){return x.id===id})[0];if(q&&q.st==="new"){q.st="rej";freeUp(q)}D.ap=D.ap.filter(function(a){return a.id!==id});sv();A()}
+function svcByName(n,i){return D.services.filter(function(x){return x.id===i})[0]||(i&&i.length===6?D.services.filter(function(x){return x.id.indexOf(i)===0})[0]:0)||D.services.filter(function(x){return x.n===n})[0]}
 function newAp(o){
  var x=svcByName(o.sn,o.sid);
  var a={id:J.uid(),sid:x?x.id:"",sn:o.sn||(x?x.n:""),date:o.date,time:o.time,min:x?x.min:(o.min||0),name:o.name||"",phone:J.phone(o.phone||""),pt:o.pt||"",amt:o.amt||"",pd:o.pd||"",ptm:o.ptm||"",st:o.st||"new",src:o.src||"",created:td(),addr:o.addr||[]};
  if(x&&!a.addr.length)a.addr=(x.addrs||[]).map(function(i){return D.addrs[i]}).filter(Boolean).map(function(y){return(y.t?y.t+": ":"")+y.a});
- D.ap.push(a);return a;
+ D.ap.push(a);if(a.st==="new"&&a.date&&a.time)rmSlots(a.date,a.time,a.min);return a;
 }
 /* خواندن پیام مشتری: اول کد SB1، وگرنه از روی خط‌های متن */
 function parseReq(t){
  t=J.en(t);
  var m=t.match(/SB1:([A-Za-z0-9+\/=_-]+)/);
  if(m){try{var o=dec(m[1].replace(/-/g,"+").replace(/_/g,"/"));if(o&&o.d&&o.t)return{sn:o.s,sid:o.i,date:o.d,time:o.t,name:o.n,phone:o.p,pt:o.k,amt:o.a,pd:o.pd,ptm:o.pt}}catch(e){}}
+ var m3=t.match(/SB3\|([^\n]+)/);
+ if(m3){var f=m3[1].split("|"),I=function(x){return/^\d{6}$/.test(x||"")?"20"+x.slice(0,2)+"-"+x.slice(2,4)+"-"+x.slice(4,6):""},T=function(x){return/^\d{4}$/.test(x||"")?x.slice(0,2)+":"+x.slice(2):""},kk=f[5]||"";
+  if(f.length>=5&&I(f[1])&&T(f[2]))return{sn:"",sid:f[0],date:I(f[1]),time:T(f[2]),name:f[3],phone:f[4],pt:kk[0]==="f"?"full":"dep",amt:kk.slice(1),pd:I(f[6]),ptm:T(f[7])}}
  var g=function(k){var r=t.match(new RegExp(k+"\\s*[:：]\\s*(.+)"));return r?r[1].trim():""};
  if(!g("خدمت")||!g("ساعت"))return null;
  return{sn:g("خدمت"),date:"",time:g("ساعت"),name:g("نام"),phone:g("موبایل"),amt:g("واریز[^:：]*")};
@@ -128,13 +133,20 @@ function aptAdd(){
  return ib+box("",'<h2>وارد کردن پیام مشتری</h2><textarea id="aptx" rows="4" placeholder="پیام درخواست نوبت را اینجا بچسبان"></textarea><button onclick="apPaste()">خواندن و افزودن به «منتظر تأیید»</button><p class="mu" id="apm"></p>')+
  box("",'<h2>ثبت دستی نوبت</h2><select id="ms">'+(x||'<option value="">اول خدمت ثبت کن</option>')+'</select><span class="mu">تاریخ</span>'+jd("md",td(),{empty:false})+'<div class="r"><input id="mt" type="time" value="10:00"><input id="mn" placeholder="نام مشتری"></div><input id="mp" class="ltr" inputmode="tel" placeholder="موبایل مشتری"><button onclick="apManual()">ثبت و تأیید</button>');
 }
-function apPaste(){
- var o=parseReq($("aptx").value),m=$("apm");
- if(!o){m.textContent="پیام شناخته نشد؛ از «ثبت دستی نوبت» استفاده کن.";return}
+function apIn(t,m){
+ var o=parseReq(t);
+ if(!o){m.textContent="پیام شناخته نشد؛ پیامک مشتری را کامل کپی کن یا از «ثبت دستی نوبت» استفاده کن.";return}
  if(!o.date){m.textContent="تاریخ در پیام نیست؛ از «ثبت دستی نوبت» استفاده کن.";return}
  if(D.ap.some(function(a){return a.date===o.date&&a.time===o.time&&J.phone(o.phone)===a.phone&&a.st!=="rej"})){m.textContent="این درخواست قبلاً ثبت شده.";return}
  o.src="msg";newAp(o);sv();go("d","ap","new");
 }
+function apPaste(){apIn($("aptx").value,$("apm"))}
+function apClip(){
+ var m=$("apc");
+ if(!navigator.clipboard||!navigator.clipboard.readText){m.textContent="این مرورگر اجازه‌ی خواندن کلیپ‌بورد نمی‌دهد؛ از «وارد کردن پیام مشتری» استفاده کن.";return}
+ navigator.clipboard.readText().then(function(t){apIn(t,$("apc")||m)}).catch(function(){m.textContent="اجازه‌ی دسترسی داده نشد؛ از «وارد کردن پیام مشتری» استفاده کن."})
+}
+function clipBox(){return box("",'<button class="ok2" onclick="apClip()">📋 چسباندن پیامک مشتری</button><p class="mu" id="apc">پیامک مشتری را کپی کن، برگرد اینجا و این دکمه را بزن.</p>')}
 function apManual(){
  var id=$("ms").value,x=D.services.filter(function(s){return s.id===id})[0],d=jv("md"),t=$("mt").value;
  if(!x||!d||!t){alert("خدمت، تاریخ و ساعت را کامل کن.");return}
@@ -269,13 +281,18 @@ function cuAdd(){var n=$("cn1").value.trim(),p=J.phone($("cp1").value);if(!n&&!p
 function cuNote(p){var t=prompt("یادداشت درباره‌ی این مشتری:",D.cn[p]||"");if(t===null)return;D.cn[p]=t;sv();A()}
 
 /* ================= داشبورد ================= */
+function bkWarn(){
+ if(!(D.ap.length||D.services.length))return"";
+ if(D.lb&&dayLeft(D.lb,td())<=7)return"";
+ return '<div class="tip">💾 '+(D.lb?"بیش از یک هفته از آخرین پشتیبان گذشته.":"هنوز از اطلاعاتت پشتیبان نگرفته‌ای.")+' <button class="g" onclick="go(\'t\',\'bk\')">پشتیبان‌گیری</button></div>'
+}
 function tDash(){
  var t=td(),wk=0,i,ap=D.ap;
  for(i=0;i<7;i++){var d=addD(t,i);wk+=ap.filter(function(a){return a.date===d&&(a.st==="ok"||a.st==="new")}).length}
  var tn=ap.filter(function(a){return a.date===t&&(a.st==="ok"||a.st==="done")}).length,nw=cntNew();
  var inc=ap.filter(function(a){return a.st==="done"||a.st==="ok"}).reduce(function(s,a){var x=svcByName(a.sn,a.sid);return s+(x&&a.date>=addD(t,-30)?fp(x):0)},0);
  var nx=ap.filter(function(a){return a.st==="ok"&&a.date>=t}).sort(function(a,b){return a.date===b.date?(a.time<b.time?-1:1):(a.date<b.date?-1:1)}).slice(0,5);
- return '<div class="stats">'+stat("نوبت امروز",fn(tn),"var(--ac)")+stat("منتظر تأیید",fn(nw),"var(--wn)")+stat("نوبت‌های ۷ روز آینده",fn(wk),"var(--in)")+stat("مشتری‌ها",fn(custs().length),"var(--ok)")+'</div>'+
+ return bkWarn()+'<div class="stats">'+stat("نوبت امروز",fn(tn),"var(--ac)")+stat("منتظر تأیید",fn(nw),"var(--wn)")+stat("نوبت‌های ۷ روز آینده",fn(wk),"var(--in)")+stat("مشتری‌ها",fn(custs().length),"var(--ok)")+'</div>'+
  (nw?'<button class="ok2" style="width:100%" onclick="go(\'d\',\'ap\',\'new\')">'+fn(nw)+' درخواست منتظر تأیید است ←</button>':'')+tCal()+
  box("",'<h2>نوبت‌های بعدی</h2>'+(nx.map(apRow).join("")||'<p class="mu">نوبت تأییدشده‌ای نیست.</p>'))+
  box("",'<p class="mu">درآمد تقریبی ۳۰ روز اخیر (بر اساس قیمت خدمت‌های تأییدشده/انجام‌شده)</p><b style="font-size:20px">'+fm(inc)+'</b>');
@@ -401,8 +418,8 @@ function tIns(){
  var u=location.href.split("#")[0];window._it="برنامه نوبت‌دهی سالن: "+u;
  return box("",'<h2>نصب روی گوشی</h2>'+(IP?'<button onclick="IP.prompt()">نصب برنامه</button>':'<p class="mu">اندروید (Chrome): منو ← Install app یا Add to Home screen.<br>آیفون (Safari): دکمه اشتراک‌گذاری ← Add to Home Screen.</p>'))+box("",'<h2>معرفی برنامه به دوستان</h2>'+shareBtns("window._it","''"));
 }
-function tBk(){return box("",'<p class="mu">اطلاعات فقط داخل مرورگر همین دستگاه است. هفته‌ای یک‌بار پشتیبان بگیر و فایل را در روبیکا یا ایتای خودت ذخیره کن.</p><button onclick="dl(\'salon-backup.json\',JSON.stringify(D))">دانلود پشتیبان</button> <button class="g" onclick="$(\'bf\').click()">بازیابی از فایل</button><input type="file" id="bf" accept=".json" style="display:none" onchange="rs(this)">')}
-function rs(el){var f=el.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);["name","fn","ln","nick","phone","addrs","services","cards","links","days","ap","cu","cn","closed","msg","theme","hs","logo","lside","rv","gd"].forEach(function(k){if(o[k]!=null)D[k]=o[k]});if(o.dev===D.dev){if(o.codes)D.codes=o.codes;if(o.trial)D.trial=o.trial}sv();setTheme(D.theme);verifyAll().then(A)}catch(e){alert("فایل معتبر نیست.")}};r.readAsText(f)}
+function tBk(){return box("",'<p class="mu">'+(D.lb?"آخرین پشتیبان: "+fdl(D.lb):"هنوز پشتیبان نگرفته‌ای.")+'</p><p class="mu">اطلاعات فقط داخل مرورگر همین دستگاه است. هفته‌ای یک‌بار پشتیبان بگیر و فایل را در روبیکا یا ایتای خودت ذخیره کن.</p><button onclick="D.lb=td();sv();dl(\'salon-backup.json\',JSON.stringify(D));A()">دانلود پشتیبان</button> <button class="g" onclick="$(\'bf\').click()">بازیابی از فایل</button><input type="file" id="bf" accept=".json" style="display:none" onchange="rs(this)">')}
+function rs(el){var f=el.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(!o||!o.services&&!o.ap&&!o.hs)throw 0;if(!confirm("اطلاعات فعلی با فایل پشتیبان جایگزین شود؟"))return;["name","fn","ln","nick","phone","addrs","services","cards","links","days","ap","cu","cn","closed","msg","theme","hs","logo","lside","rv","gd","sid","stk"].forEach(function(k){if(o[k]!=null)D[k]=o[k]});if(o.dev===D.dev){if(o.codes)D.codes=o.codes;if(o.trial)D.trial=o.trial}sv();setTheme(D.theme);alert("بازیابی شد.");verifyAll().then(A)}catch(e){alert("فایل معتبر نیست.")}};r.readAsText(f)}
 function tTx(){
  var ms=[["ok","پیام تأیید نوبت"],["rej","پیام رد / زمان دیگر"],["rem","پیام یادآوری"]].map(function(k){return '<span class="mu">'+k[1]+'</span><textarea rows="3" oninput="D.msg.'+k[0]+'=this.value;sv()">'+esc(msgT(k[0]))+'</textarea>'}).join("");
  return box("",ms+'<p class="mu">جای‌نگهدار: {name} نام مشتری، {service} خدمت، {date} تاریخ، {time} ساعت، {salon} نام سالن، {addr} آدرس.</p><button class="g" onclick="if(confirm(\'متن‌ها به حالت اول برگردد؟\')){D.msg={};sv();A()}">بازگشت به متن پیش‌فرض</button>')+
@@ -414,7 +431,7 @@ NAV.tree=[
  {k:"d",t:"داشبورد",ic:"🏠",v:tDash,ch:[
   {k:"ap",t:"نوبت‌ها",ic:"📅",badge:cntNew,ch:[
    {k:"today",t:"امروز",v:function(){return listFor("today","امروز نوبتی نیست.")}},
-   {k:"new",t:"منتظر تأیید",badge:cntNew,v:function(){return listFor("new","درخواست جدیدی نیست.")}},
+   {k:"new",t:"منتظر تأیید",badge:cntNew,v:function(){return clipBox()+listFor("new","درخواست جدیدی نیست.")}},
    {k:"ok",t:"تأییدشده",v:function(){return listFor("ok")}},
    {k:"done",t:"انجام‌شده",v:function(){return listFor("done")}},
    {k:"all",t:"همه",v:function(){return listFor("all")}},
@@ -538,35 +555,61 @@ function snd(t){
  var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd?fdw(CV.pd):"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nSB1:"+enc(pl).replace(/\+/g,"-").replace(/\//g,"_");
  var sp=(C0.phone||"").replace(/\D/g,"");
  if(t==="auto"){autoSend("b",txt,m,"✓ درخواست نوبت برای سالن ارسال شد؛ منتظر تأیید باش.");return}
+ if(t==="sms"){
+  var y=function(d){return d?d.slice(2).replace(/-/g,""):""},hm=function(v){return(v||"").replace(":","")},am=J.en(CV.pa||"").replace(/\D/g,"");
+  txt="درخواست نوبت\nSB3|"+x.id.slice(0,6)+"|"+y(sel.d)+"|"+hm(sel.t)+"|"+CV.cn.replace(/[|\n]/g," ").trim().slice(0,20)+"|"+ph+"|"+(sel.pt==="dep"?"d":"f")+am+(CV.pd?"|"+y(CV.pd)+(CV.pt?"|"+hm(CV.pt):""):"");
+ }
  if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
 
 
-/* ================= دریافت خودکار (صندوق ابری) ================= */
-var IB={st:"",busy:false,reg:false,n:0};
-function hasApi(){return typeof API!=="undefined"&&!!API}
-function apiP(path,body){return fetch(API.replace(/\/$/,"")+path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(j){j._s=r.status;return j})})}
-function ibReg(){if(!hasApi()||IB.reg)return Promise.resolve(IB.reg);return apiP("/reg/"+D.sid,{t:D.stk}).then(function(j){IB.reg=!!j.ok;return IB.reg}).catch(function(){return false})}
+/* ================= دریافت خودکار (صندوق ابری، چند آدرس) ================= */
+var IB={st:"",busy:false,reg:{},n:0};
+function apiUrls(){return(typeof API==="undefined"?[]:[].concat(API)).filter(Boolean)}
+function hasApi(){return apiUrls().length>0}
+function apiU(u,path,body){return fetch(u.replace(/\/$/,"")+path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(j){j._s=r.status;return j})})}
+/* مشتری: اولین آدرسی که جواب موفق بدهد */
+function apiP(path,body){
+ var U=apiUrls(),k=0,last=null;
+ function nx(){if(k>=U.length)return last?Promise.resolve(last):Promise.reject(new Error("x"));
+  return apiU(U[k++],path,body).then(function(j){if(j.ok)return j;last=j;return nx()}).catch(function(){return nx()})}
+ return nx();
+}
+function ibReg(){apiUrls().forEach(function(u){if(IB.reg[u])return;apiU(u,"/reg/"+D.sid,{t:D.stk}).then(function(j){if(j.ok)IB.reg[u]=1}).catch(function(){})})}
+function ibOne(u){
+ var s={t:D.stk},add=0;
+ var rg=IB.reg[u]?Promise.resolve(true):apiU(u,"/reg/"+D.sid,s).then(function(j){if(j.ok)IB.reg[u]=1;return!!j.ok});
+ return rg.then(function(ok){
+  if(!ok)return 0;
+  return apiU(u,"/chk/"+D.sid,s).then(function(c){
+   D.ibf=D.ibf||{};
+   if(c.ok&&D.ibf[u]===c.f)return 1;
+   if(!c.ok&&c.e!=="path")return 0;
+   return apiU(u,"/get/"+D.sid,s).then(function(j){
+    if(!j.ok)return 0;
+    var ids=[];
+    j.items.forEach(function(it){
+     ids.push(it.id);
+     if(it.k==="b"){var o=parseReq(it.x);if(o&&o.date&&!D.ap.some(function(a){return a.date===o.date&&a.time===o.time&&J.phone(o.phone)===a.phone&&a.st!=="rej"})){o.src="auto";newAp(o);add++}}
+     else if(it.k==="r"){var r=parseRv(it.x);if(r&&!D.rv.some(function(x){return x.date===td()&&x.n===r.n&&x.c===r.c&&x.r===r.r})){r.id=J.uid();r.date=td();D.rv.push(r);add++}}
+    });
+    var fin=function(){if(c.ok)D.ibf[u]=c.f;if(add){IB.n+=add;sv()}return 1};
+    if(!ids.length)return fin();
+    sv();return apiU(u,"/ack/"+D.sid,{t:D.stk,ids:ids}).then(fin);
+   });
+  });
+ }).catch(function(){return 0});
+}
 function ibPoll(){
  if(!hasApi()||mode!=="a"||IB.busy||!actv())return Promise.resolve();
- IB.busy=true;
- return ibReg().then(function(ok){
-  if(!ok){IB.st="اتصال برقرار نشد";return}
-  return apiP("/get/"+D.sid,{t:D.stk}).then(function(j){
-   if(!j.ok){IB.st="خطا در دریافت";return}
-   var ids=[],add=0;
-   j.items.forEach(function(it){
-    ids.push(it.id);
-    if(it.k==="b"){var o=parseReq(it.x);if(o&&o.date&&!D.ap.some(function(a){return a.date===o.date&&a.time===o.time&&J.phone(o.phone)===a.phone&&a.st!=="rej"})){o.src="auto";newAp(o);add++}}
-    else if(it.k==="r"){var r=parseRv(it.x);if(r){r.id=J.uid();r.date=td();D.rv.push(r);add++}}
-   });
-   IB.st="آخرین بررسی: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});
-   if(ids.length){sv();return apiP("/ack/"+D.sid,{t:D.stk,ids:ids}).then(function(){if(add){IB.n+=add;A()}})}
-  });
+ IB.busy=true;var n0=IB.n;
+ return Promise.all(apiUrls().map(ibOne)).then(function(r){
+  IB.st=r.some(function(x){return x})?"آخرین بررسی: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"}):"اتصال برقرار نشد";
+  sv();if(IB.n!==n0)A();
  }).catch(function(){IB.st="اتصال برقرار نشد"}).then(function(){IB.busy=false})
 }
 function ibNow(){ibPoll().then(function(){var e=$("ibs");if(e)e.textContent=IB.st})}
-if(hasApi()){setInterval(function(){if(!document.hidden&&mode==="a")ibPoll()},30000);document.addEventListener("visibilitychange",function(){if(!document.hidden)ibPoll()})}
+if(hasApi()){setInterval(function(){if(!document.hidden&&mode==="a")ibPoll()},60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)ibPoll()})}
 
 /* ================= شروع ================= */
 window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();IP=e});
