@@ -1,4 +1,5 @@
 /* پنل سالن + صفحه مشتری (نسخه ۴). داده‌ها فقط در مرورگر همین دستگاه (localStorage، کلید sal) می‌ماند. */
+var APIT=15000;
 var app=$("app");
 var DEF_MSG={
  ok:"سلام {name} عزیز\nنوبت شما برای «{service}» در {date} ساعت {time} تأیید شد.{addr}\n{salon}",
@@ -317,7 +318,7 @@ function tLk(){
  if(hasApi()){
   window._lv=(dname()?dname()+": ":"")+"رزرو نوبت از این لینک:\n"+liveUrl();
   var q="";try{q=qrSvg(liveUrl())}catch(e){}
-  live=box("",'<h2>لینک ثابت رزرو (پیشنهادی)</h2><p class="mu">این لینک همیشه یکی است. هر تغییری در خدمات، ساعت‌ها و نوبت‌ها خودکار در آن اعمال می‌شود؛ پس یک بار در بیو یا کانال بگذار یا بفرست و لازم نیست دوباره بسازی. مشتری باید اینترنت داشته باشد.</p><div class="ltr" style="margin:8px 0">'+esc(liveUrl())+'</div>'+shareBtns("window._lv","''")+(q?'<div id="qrl">'+q+'</div>':'')+'<p class="mu" id="pbs">'+esc(PB.st||(D.pbt?"آخرین انتشار موفق ثبت شده است.":"هنوز منتشر نشده؛ چند ثانیه صبر کن یا انتشار دستی را بزن."))+'</p><button class="g" onclick="pbNow(true).then(function(){var e=$(\'pbs\');if(e)e.textContent=PB.st})">انتشار دستی همین حالا</button>');
+  live=box("",'<h2>لینک ثابت رزرو (پیشنهادی)</h2><p class="mu">این لینک همیشه یکی است. هر تغییری در خدمات، ساعت‌ها و نوبت‌ها خودکار در آن اعمال می‌شود؛ پس یک بار در بیو یا کانال بگذار یا بفرست و لازم نیست دوباره بسازی. مشتری باید اینترنت داشته باشد.</p><div class="ltr" style="margin:8px 0">'+esc(liveUrl())+'</div>'+shareBtns("window._lv","''")+(q?'<div id="qrl">'+q+'</div>':'')+'<p class="mu" id="pbs">'+esc(PB.st||(D.pbt?"آخرین انتشار موفق ثبت شده است.":"هنوز منتشر نشده؛ چند ثانیه صبر کن یا انتشار دستی را بزن."))+'</p><button class="g" onclick="pbNow(true)">انتشار دستی همین حالا</button>');
   setTimeout(function(){ibReg();pbNow()},200);
  }
  return live+box("",'<h2>'+(hasApi()?'لینک بدون اینترنت (ثابت)':'لینک رزرو')+'</h2><button onclick="mkL()">ساخت لینک و QR</button> <button class="g" onclick="preview()">پیش‌نمایش</button><div id="lo"></div><p class="mu">لینک عکسی از ساعت‌های خالی همین لحظه است و با تغییر خدمت یا ساعت باید دوباره ساخته شود.</p>')
@@ -598,7 +599,10 @@ function snd(t){
 var IB={st:"",busy:false,reg:{},n:0};
 function apiUrls(){return(typeof API==="undefined"?[]:[].concat(API)).filter(Boolean)}
 function hasApi(){return apiUrls().length>0}
-function apiU(u,path,body){return fetch(u.replace(/\/$/,"")+path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(j){j._s=r.status;return j})})}
+function apiU(u,path,body){
+ var c=typeof AbortController!=="undefined"?new AbortController():null,t=c?setTimeout(function(){c.abort()},APIT||15000):0;
+ return fetch(u.replace(/\/$/,"")+path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:c?c.signal:undefined}).then(function(r){return r.json().then(function(j){clearTimeout(t);j._s=r.status;return j})}).catch(function(e){clearTimeout(t);throw e})
+}
 /* مشتری: اولین آدرسی که جواب موفق بدهد */
 function apiP(path,body){
  var U=apiUrls(),k=0,last=null;
@@ -647,24 +651,27 @@ var PB={t:null,busy:false,st:""};
 function hs(z){var h=5381,i;for(i=0;i<z.length;i++)h=((h<<5)+h+z.charCodeAt(i))|0;return z.length+":"+h}
 function liveUrl(){return location.href.split("#")[0]+"#s="+D.sid}
 function pbSched(){if(!hasApi()||mode!=="a")return;clearTimeout(PB.t);PB.t=setTimeout(function(){pbNow()},6000)}
+function pbSt(t){PB.st=t;var e=$("pbs");if(e)e.textContent=t}
 function pbNow(force){
- if(!hasApi()||PB.busy||mode!=="a"||!actv())return Promise.resolve();
- PB.busy=true;
+ if(!hasApi()||mode!=="a")return Promise.resolve();
+ if(!actv()){pbSt("اشتراک فعال نیست؛ انتشار انجام نشد.");return Promise.resolve()}
+ if(PB.busy){pbSt("یک انتشار در حال انجام است؛ چند ثانیه صبر کن.");return Promise.resolve()}
+ PB.busy=true;if(force)pbSt("در حال انتشار...");
  return zip(packPub(pub(true))).then(function(z){
   var h=hs(z);
   if(!force&&D.pbh===h&&D.pbt&&Date.now()-D.pbt<20*864e5)return"same";
   return Promise.all(apiUrls().map(function(u){
-   var rg=IB.reg[u]?Promise.resolve(true):apiU(u,"/reg/"+D.sid,{t:D.stk}).then(function(j){if(j.ok)IB.reg[u]=1;return!!j.ok});
-   return rg.then(function(ok){return ok?apiU(u,"/pub/"+D.sid,{t:D.stk,d:z}).then(function(j){return!!j.ok}):false}).catch(function(){return false})
+   var rg=IB.reg[u]?Promise.resolve(1):apiU(u,"/reg/"+D.sid,{t:D.stk}).then(function(j){if(j.ok){IB.reg[u]=1;return 1}return j.e==="auth"?"این صندوق با کلید دیگری ثبت شده":"خطای ثبت ("+(j.e||j._s)+")"});
+   return rg.then(function(ok){return ok===1?apiU(u,"/pub/"+D.sid,{t:D.stk,d:z}).then(function(j){return j.ok?1:(j.e==="big"?"اطلاعات بیش از حد بزرگ است (لوگو را کوچک‌تر کن)":"خطای انتشار ("+(j.e||j._s)+")")}):ok}).catch(function(e){return e&&e.name==="AbortError"?"پاسخ نیامد (زمان تمام شد)":"اتصال به آدرس برقرار نشد"})
   })).then(function(r){
-   if(r.some(function(x){return x})){D.pbh=h;D.pbt=Date.now();svRaw();PB.st="منتشر شد: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});return"ok"}
-   PB.st="انتشار انجام نشد؛ اینترنت را بررسی کن.";return"fail"
+   if(r.some(function(x){return x===1})){D.pbh=h;D.pbt=Date.now();svRaw();pbSt("منتشر شد: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"}));return"ok"}
+   pbSt("انتشار انجام نشد: "+r.filter(function(x){return x!==1})[0]);return"fail"
   })
- }).catch(function(){PB.st="انتشار انجام نشد."}).then(function(r){PB.busy=false;var e=$("pbs");if(e)e.textContent=PB.st||"";return r})
+ }).catch(function(){pbSt("انتشار انجام نشد: خطای ناشناخته")}).then(function(r){PB.busy=false;return r})
 }
 function fetchSnap(sid){
  return apiP("/sn/"+sid,{}).then(function(j){
-  if(!j.ok||!j.d)throw new Error("none");
+  if(!j.ok||!j.d)throw new Error(j.e||"none");
   try{localStorage.setItem("snap:"+sid,j.d)}catch(e){}
   return unzip(j.d)
  }).catch(function(e){
@@ -684,5 +691,5 @@ function importLink(){
 window.addEventListener("hashchange",function(){var h=location.hash.slice(1);if(h.slice(0,2)==="n="&&mode==="a"){NH=h.slice(2);importLink()}});
 /* ================= شروع ================= */
 window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();IP=e});
-if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){if(LV){app.innerHTML='<div class="w"><div class="c"><h1>بارگذاری نشد</h1><p class="mu">اطلاعات سالن گرفته نشد. اینترنت را بررسی کن و دوباره تلاش کن.</p><button onclick="location.reload()">تلاش دوباره</button></div></div>';return}mode="a";sv();A()})}else if(NH&&!(D.services.length||D.name)){app.innerHTML='<div class="w"><div class="c"><h1>این لینک مخصوص سالن است</h1><p class="mu">این پیام برای پنل سالن فرستاده شده است. اگر مشتری هستی، برای رزرو از «لینک رزرو» خود سالن استفاده کن.</p></div></div>'}else{autoGen();sv();A();if(NH)setTimeout(importLink,300);if(PUB)verifyAll().then(A);if(hasApi())setTimeout(ibPoll,1500)}
+if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(e){if(LV){var m=e&&e.message,why=m==="none"?"سالن هنوز لینکش را منتشر نکرده است؛ از سالن بخواه یک بار پنل را باز کند و «انتشار دستی» را بزند.":(m==="x"||!m||m==="Failed to fetch"||m==="Load failed")?"اتصال به اینترنت یا به آدرس سالن برقرار نشد.":m==="slow"?"زیاد صبر کردیم ولی جواب نیامد.":"خطای دریافت ("+esc(String(m).slice(0,40))+").";app.innerHTML='<div class="w"><div class="c"><h1>بارگذاری نشد</h1><p class="mu">'+why+' دوباره تلاش کن.</p><button onclick="location.reload()">تلاش دوباره</button></div></div>';return}mode="a";sv();A()})}else if(NH&&!(D.services.length||D.name)){app.innerHTML='<div class="w"><div class="c"><h1>این لینک مخصوص سالن است</h1><p class="mu">این پیام برای پنل سالن فرستاده شده است. اگر مشتری هستی، برای رزرو از «لینک رزرو» خود سالن استفاده کن.</p></div></div>'}else{autoGen();sv();A();if(NH)setTimeout(importLink,300);if(PUB)verifyAll().then(A);if(hasApi())setTimeout(ibPoll,1500)}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js")}catch(e){}
