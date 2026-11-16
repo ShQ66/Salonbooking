@@ -16,7 +16,8 @@ var PL=null,PUB=null,MG={},SP=null,PV={},TR=null,IP=null,ST={exp:"",kind:""},PK=
 try{PUB=JSON.parse(localStorage.getItem("pub"))}catch(e){}
 var mode="a",sel={s:null,d:null,t:null,pt:"dep"};
 var hh=location.hash.slice(1);
-var HASHP=hh.length>10?unzip(hh):null;
+var NH=hh.slice(0,2)==="n="?hh.slice(2):"";
+var HASHP=hh.length>10&&!NH?unzip(hh):null;
 if(D.last<td())D.last=td();
 function dname(){return D.nick||((D.fn||"")+" "+(D.ln||"")).trim()}
 if(dname()&&!D.fn&&!D.nick)D.nick=dname();
@@ -118,6 +119,8 @@ function newAp(o){
 /* خواندن پیام مشتری: اول کد SB1، وگرنه از روی خط‌های متن */
 function parseReq(t){
  t=J.en(t);
+ var mu=t.match(/#n=([A-Za-z0-9_-]+)/);
+ if(mu){try{t="SB3|"+new TextDecoder().decode(u2b(mu[1]))}catch(e){}}
  var m=t.match(/SB1:([A-Za-z0-9+\/=_-]+)/);
  if(m){try{var o=dec(m[1].replace(/-/g,"+").replace(/_/g,"/"));if(o&&o.d&&o.t)return{sn:o.s,sid:o.i,date:o.d,time:o.t,name:o.n,phone:o.p,pt:o.k,amt:o.a,pd:o.pd,ptm:o.pt}}catch(e){}}
  var m3=t.match(/SB3\|([^\n]+)/);
@@ -557,7 +560,8 @@ function snd(t){
  if(t==="auto"){autoSend("b",txt,m,"✓ درخواست نوبت برای سالن ارسال شد؛ منتظر تأیید باش.");return}
  if(t==="sms"){
   var y=function(d){return d?d.slice(2).replace(/-/g,""):""},hm=function(v){return(v||"").replace(":","")},am=J.en(CV.pa||"").replace(/\D/g,"");
-  txt="درخواست نوبت\nSB3|"+x.id.slice(0,6)+"|"+y(sel.d)+"|"+hm(sel.t)+"|"+CV.cn.replace(/[|\n]/g," ").trim().slice(0,20)+"|"+ph+"|"+(sel.pt==="dep"?"d":"f")+am+(CV.pd?"|"+y(CV.pd)+(CV.pt?"|"+hm(CV.pt):""):"");
+  var cs=x.id.slice(0,6)+"|"+y(sel.d)+"|"+hm(sel.t)+"|"+CV.cn.replace(/[|\n]/g," ").trim().slice(0,20)+"|"+ph+"|"+(sel.pt==="dep"?"d":"f")+am+(CV.pd?"|"+y(CV.pd)+(CV.pt?"|"+hm(CV.pt):""):"");
+  txt="SalonBook\n"+location.href.split("#")[0]+"#n="+b2u(new TextEncoder().encode(cs));
  }
  if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
@@ -611,7 +615,16 @@ function ibPoll(){
 function ibNow(){ibPoll().then(function(){var e=$("ibs");if(e)e.textContent=IB.st})}
 if(hasApi()){setInterval(function(){if(!document.hidden&&mode==="a")ibPoll()},60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)ibPoll()})}
 
+/* باز کردن لینک پیامکِ نوبت در پنل سالن */
+function importLink(){
+ var e={},t="https://x/#n="+NH;
+ try{history.replaceState(null,"",location.pathname+location.search)}catch(x){}
+ if(!D.services.length){alert("این لینک برای پنل سالن است و روی این دستگاه سالنی تنظیم نشده.");return}
+ apIn(t,e);
+ if(e.textContent)alert(e.textContent);
+}
+window.addEventListener("hashchange",function(){var h=location.hash.slice(1);if(h.slice(0,2)==="n="&&mode==="a"){NH=h.slice(2);importLink()}});
 /* ================= شروع ================= */
 window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();IP=e});
-if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){mode="a";sv();A()})}else{autoGen();sv();A();if(PUB)verifyAll().then(A);if(hasApi())setTimeout(ibPoll,1500)}
+if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){mode="a";sv();A()})}else{autoGen();sv();A();if(NH)setTimeout(importLink,300);if(PUB)verifyAll().then(A);if(hasApi())setTimeout(ibPoll,1500)}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js")}catch(e){}
