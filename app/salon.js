@@ -9,7 +9,8 @@ var THEMES=["#b4456b","#8e44ad","#2f6fb5","#1f8a5b","#c0392b","#d35400","#34495e
 var D={name:"",fn:"",ln:"",nick:"",addrs:[],phone:"",services:[],cards:[],links:[],days:{},logo:"",lside:"r",rv:[],gd:{},dev:rnd8(),codes:[],trial:null,last:td(),used:[],
  ap:[],cu:[],cn:{},closed:[],msg:{},theme:"",hs:{from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]}};
 try{var s0=localStorage.getItem("sal");if(s0)D=Object.assign(D,JSON.parse(s0))}catch(e){}
-D.msg=D.msg||{};D.hs=Object.assign({from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]},D.hs||{});D.gd=D.gd||{};D.rv=D.rv||[];
+D.msg=D.msg||{};if(!D.sid){D.sid=rk(12);D.stk=rk(32)}D.hs=Object.assign({from:"09:00",to:"18:00",step:30,n:14,perm:false,wd:[1,1,1,1,1,1,0]},D.hs||{});D.gd=D.gd||{};D.rv=D.rv||[];
+function rk(n){var c="abcdefghijkmnpqrstuvwxyz23456789",a=new Uint8Array(n),r="",i;crypto.getRandomValues(a);for(i=0;i<n;i++)r+=c[a[i]%c.length];return r}
 function sv(){try{localStorage.setItem("sal",JSON.stringify(D))}catch(e){}}
 var PL=null,PUB=null,MG={},SP=null,PV={},TR=null,IP=null,ST={exp:"",kind:""},PK=null,AM=null,CM=null,CV={},C0=null;
 try{PUB=JSON.parse(localStorage.getItem("pub"))}catch(e){}
@@ -122,8 +123,9 @@ function parseReq(t){
  return{sn:g("خدمت"),date:"",time:g("ساعت"),name:g("نام"),phone:g("موبایل"),amt:g("واریز[^:：]*")};
 }
 function aptAdd(){
+ var ib=hasApi()?box("",'<h2>دریافت خودکار</h2><p class="mu">نوبت‌هایی که مشتری از لینک ثبت کند خودکار اینجا می‌آید.</p><p id="ibs" class="mu">'+esc(IB.st||"فعال")+'</p><button class="g" onclick="ibNow()">بررسی همین حالا</button>'):"";
  var x=D.services.filter(function(s){return s.on}).map(function(s){return'<option value="'+s.id+'">'+esc(s.n)+'</option>'}).join("");
- return box("",'<h2>وارد کردن پیام مشتری</h2><textarea id="aptx" rows="4" placeholder="پیام درخواست نوبت را اینجا بچسبان"></textarea><button onclick="apPaste()">خواندن و افزودن به «منتظر تأیید»</button><p class="mu" id="apm"></p>')+
+ return ib+box("",'<h2>وارد کردن پیام مشتری</h2><textarea id="aptx" rows="4" placeholder="پیام درخواست نوبت را اینجا بچسبان"></textarea><button onclick="apPaste()">خواندن و افزودن به «منتظر تأیید»</button><p class="mu" id="apm"></p>')+
  box("",'<h2>ثبت دستی نوبت</h2><select id="ms">'+(x||'<option value="">اول خدمت ثبت کن</option>')+'</select><span class="mu">تاریخ</span>'+jd("md",td(),{empty:false})+'<div class="r"><input id="mt" type="time" value="10:00"><input id="mn" placeholder="نام مشتری"></div><input id="mp" class="ltr" inputmode="tel" placeholder="موبایل مشتری"><button onclick="apManual()">ثبت و تأیید</button>');
 }
 function apPaste(){
@@ -283,12 +285,13 @@ function tDash(){
 function pub(withLogo){
  autoGen();
  var days={};Object.keys(D.days).forEach(function(d){if(d>=td()&&D.closed.indexOf(d)<0)days[d]=D.days[d]});
- return{name:dname(),phone:D.phone,th:D.theme||"",st:D.hs.step||30,ls:D.lside||"r",lg:(withLogo&&D.logo)?D.logo:undefined,services:D.services.filter(function(x){return x.on}),cards:D.cards.map(function(c){return c.on?c:null}),addrs:D.addrs.map(function(c){return c.on?c:null}),links:D.links,days:days};
+ return{sid:(typeof API!=="undefined"&&API)?D.sid:undefined,name:dname(),phone:D.phone,th:D.theme||"",st:D.hs.step||30,ls:D.lside||"r",lg:(withLogo&&D.logo)?D.logo:undefined,services:D.services.filter(function(x){return x.on}),cards:D.cards.map(function(c){return c.on?c:null}),addrs:D.addrs.map(function(c){return c.on?c:null}),links:D.links,days:days};
 }
 function tLk(){
  return box("",'<button onclick="mkL()">ساخت لینک و QR</button> <button class="g" onclick="preview()">پیش‌نمایش</button><div id="lo"></div><p class="mu">لینک عکسی از ساعت‌های خالی همین لحظه است. بعد از هر تأیید نوبت یا تغییر ساعت‌ها، دوباره بساز و بفرست.</p>');
 }
 function mkL(){
+ ibReg();
  var base=location.href.split("#")[0],lo=$("lo");lo.innerHTML='<p class="mu">در حال ساخت...</p>';
  Promise.all([zip(packPub(pub(true))),zip(packPub(pub(false)))]).then(function(r){
   var u=base+"#"+r[0],q=base+"#"+r[1];
@@ -442,7 +445,7 @@ decorNav(NAV.tree,{"s/ad":1,"s/sv":2,"s/hr":3,"s/ln":4,"s/sv/svn":1,"s/sv/svl":2
  "d/ap/ok":"نوبت‌های تأییدشده. بعد از انجام، «انجام شد» را بزن.",
  "d/ap/add":"پیام مشتری را بچسبان تا نوبت ساخته شود، یا خودت نوبت دستی ثبت کن.",
  "d/lk":"لینک را بساز و برای مشتری بفرست. بعد از هر تأیید نوبت یا تغییر ساعت، دوباره بساز.",
- "d/ins":"برنامه را روی صفحه‌ی گوشی نصب کن یا برای هم‌صنف‌هایت بفرست.",
+ "d/ins":"برنامه را روی صفحه‌ی گوشی نصب کن یا برای هم‌صنفی‌هایت بفرست.",
  "s":"یک بخش را بزن؛ بقیه پنهان می‌شوند. «بازگشت» دوباره همه را نشان می‌دهد.",
  "t":"یک بخش را بزن؛ بقیه پنهان می‌شوند. «بازگشت» دوباره همه را نشان می‌دهد.",
  "s/rv":"نظر و امتیازی که مشتری فرستاده را اینجا بچسبان تا ذخیره شود و میانگین امتیازت را ببینی.",
@@ -505,8 +508,8 @@ function C(){
  (x?adc(x):'')+(x?box("",'<h2>۲. روز</h2><p class="mu">روزی که می‌خواهی بیایی را بزن.</p>'+(dk.length?'<div class="ch">'+dk.map(function(d){return '<button class="'+(sel.d===d?'on':'')+'" onclick="pk(\'d\',\''+d+'\')">'+fd(d)+'</button>'}).join("")+'</div>':'<p class="er">فعلاً زمان خالی برای این خدمت نیست.</p>')):'')+(x&&sel.d?box("",'<h2>۳. ساعت</h2><p class="mu">فقط ساعت‌هایی نشان داده می‌شود که برای مدت این خدمت خالی است.</p><div class="ch">'+tm.map(function(t){return '<button class="'+(sel.t===t?'on':'')+'" onclick="pk(\'t\',\''+t+'\')">'+t+'</button>'}).join("")+'</div>'):'')+
  (x&&sel.t?box("",'<h2>۴. واریز</h2><p class="mu">مبلغ را به یکی از کارت‌ها بزن، بعد سه کادر پایین را پر کن.</p><div class="ch"><button class="'+(sel.pt==="dep"?'on':'')+'" onclick="pk(\'pt\',\'dep\')">بیعانه</button><button class="'+(sel.pt==="full"?'on':'')+'" onclick="pk(\'pt\',\'full\')">مبلغ کل</button></div><p>مبلغ: <b>'+fm(sel.pt==="dep"?(x.dep||0):fp(x))+'</b></p>'+(cd||'<p class="mu">کارتی نمایش داده نمی‌شود.</p>')+
  '<div class="r"><input id="pa" inputmode="numeric" placeholder="مبلغ واریزی" value="'+esc(cv("pa"))+'" oninput="fi(this);CV.pa=this.value"></div><span class="mu">تاریخ و ساعت واریز</span><div class="r">'+jd("pd",cv("pd"),{cb:"CV.pd=jv('pd')"})+'<input id="pt" type="time" value="'+esc(cv("pt"))+'" oninput="CV.pt=this.value"></div>'):'')+
- (x&&sel.t?box("",'<h2>۵. مشخصات و ارسال</h2><p class="mu">با یکی از راه‌ها برای سالن بفرست.</p><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value"><div class="ch"><button onclick="snd(\'sms\')">ارسال با پیامک</button><button onclick="snd(\'wa\')">واتس‌اپ</button><button class="g" onclick="snd(\'ei\')">ایتا</button><button class="g" onclick="snd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p>'):'')+
- (S.length?box("",'<h2>نظر و امتیاز شما (اختیاری)</h2><p class="mu">اگر از خدمت راضی بودی یا پیشنهادی داری، برای سالن بفرست.</p>'+stars(RV.r,"rvR")+'<textarea rows="3" placeholder="نظر یا پیشنهاد شما" oninput="RV.c=this.value">'+esc(RV.c)+'</textarea><div class="ch"><button onclick="rvSnd(\'sms\')">ارسال با پیامک</button><button onclick="rvSnd(\'wa\')">واتس‌اپ</button><button class="g" onclick="rvSnd(\'ei\')">ایتا</button><button class="g" onclick="rvSnd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="fm"></p>'):'')+
+ (x&&sel.t?box("",'<h2>۵. مشخصات و ارسال</h2><p class="mu">با یکی از راه‌ها برای سالن بفرست.</p><input id="cn" placeholder="نام شما" value="'+esc(cv("cn"))+'" oninput="CV.cn=this.value"><input id="cp" inputmode="tel" class="ltr" placeholder="موبایل شما" value="'+esc(cv("cp"))+'" oninput="CV.cp=this.value"><div class="ch">'+(C0.sid&&hasApi()?'<button class="ok2" onclick="snd(\'auto\')">ثبت نوبت (خودکار)</button>':'')+'<button onclick="snd(\'sms\')">ارسال با پیامک</button><button onclick="snd(\'wa\')">واتس‌اپ</button><button class="g" onclick="snd(\'ei\')">ایتا</button><button class="g" onclick="snd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="sm"></p><p class="mu">بعد از ارسال، منتظر تأیید نهایی سالن بمان.</p>'):'')+
+ (S.length?box("",'<h2>نظر و امتیاز شما (اختیاری)</h2><p class="mu">اگر از خدمت راضی بودی یا پیشنهادی داری، برای سالن بفرست.</p>'+stars(RV.r,"rvR")+'<textarea rows="3" placeholder="نظر یا پیشنهاد شما" oninput="RV.c=this.value">'+esc(RV.c)+'</textarea><div class="ch">'+(C0.sid&&hasApi()?'<button class="ok2" onclick="rvSnd(\'auto\')">ارسال نظر (خودکار)</button>':'')+'<button onclick="rvSnd(\'sms\')">ارسال با پیامک</button><button onclick="rvSnd(\'wa\')">واتس‌اپ</button><button class="g" onclick="rvSnd(\'ei\')">ایتا</button><button class="g" onclick="rvSnd(\'cp\')">کپی (روبیکا)</button></div><p class="mu" id="fm"></p>'):'')+
  ((C0.links||[]).length?box("",'<h2>ما را دنبال کنید</h2>'+C0.links.map(function(l){return '<div class="row"><div><b>'+esc(l.t)+'</b><small>'+plat(l.pl)+'</small></div><button class="g" onclick="window.open(\''+esc(l.u)+'\',\'_blank\')">عضویت / مشاهده</button></div>'}).join("")):'');
 }
 var RV={r:0,c:""};
@@ -517,9 +520,16 @@ function rvSnd(t){
  var pl={s:x?x.n:"",r:RV.r,c:RV.c.trim(),n:CV.cn||"",p:CV.cp?J.phone(CV.cp):""};
  var txt="نظر درباره‌ی خدمت\n"+(x?"خدمت: "+x.n+"\n":"")+"امتیاز: "+stx(RV.r)+" ("+fn(RV.r)+" از ۵)\nنظر: "+(RV.c.trim()||"—")+(CV.cn?"\nنام: "+CV.cn:"")+"\n\nSB2:"+enc(pl).replace(/\+/g,"-").replace(/\//g,"_");
  var sp=(C0.phone||"").replace(/\D/g,"");
+ if(t==="auto"){autoSend("r",txt,m,"✓ نظر شما برای سالن ارسال شد. ممنون!");return}
  if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
 function pk(k,v){sel[k]=v;if(k==="s"){sel.pt="dep";sel.d=null;sel.t=null}if(k==="d")sel.t=null;C()}
+function autoSend(k,txt,m,ok){
+ if(m.dataset.b)return;m.dataset.b=1;m.textContent="در حال ارسال...";
+ apiP("/in/"+C0.sid,{k:k,x:txt}).then(function(j){
+  if(j.ok){m.className="ok";m.textContent=ok}else{m.className="er";m.textContent="ارسال خودکار انجام نشد؛ با یکی از راه‌های پیام بفرست."}
+ }).catch(function(){m.className="er";m.textContent="اینترنت وصل نیست یا ارسال خودکار ممکن نشد؛ با پیام بفرست."}).then(function(){delete m.dataset.b});
+}
 function snd(t){
  var x=sel.s!==null?C0.services[sel.s]:null,m=$("sm");
  if(!x||!sel.d||!sel.t||!CV.cn||!CV.cp){m.textContent="خدمت، روز، ساعت، نام و موبایل را کامل کن.";return}
@@ -527,10 +537,38 @@ function snd(t){
  var pl={s:x.n,i:x.id,d:sel.d,t:sel.t,n:CV.cn,p:ph,k:sel.pt,a:CV.pa||"",pd:CV.pd||"",pt:CV.pt||""};
  var txt="درخواست نوبت\nخدمت: "+x.n+"\nتاریخ: "+fdw(sel.d)+"\nساعت: "+sel.t+"\nنام: "+CV.cn+"\nموبایل: "+ph+"\nواریز ("+(sel.pt==="dep"?"بیعانه":"مبلغ کل")+"): "+(CV.pa||"—")+"\nتاریخ واریز: "+(CV.pd?fdw(CV.pd):"—")+"\nساعت واریز: "+(CV.pt||"—")+"\n\nSB1:"+enc(pl).replace(/\+/g,"-").replace(/\//g,"_");
  var sp=(C0.phone||"").replace(/\D/g,"");
+ if(t==="auto"){autoSend("b",txt,m,"✓ درخواست نوبت برای سالن ارسال شد؛ منتظر تأیید باش.");return}
  if(t==="sms"||t==="wa")sendTo(t,txt,sp);else sendTo(t==="ei"?"ei":"cp",txt,sp,m);
 }
 
+
+/* ================= دریافت خودکار (صندوق ابری) ================= */
+var IB={st:"",busy:false,reg:false,n:0};
+function hasApi(){return typeof API!=="undefined"&&!!API}
+function apiP(path,body){return fetch(API.replace(/\/$/,"")+path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(j){j._s=r.status;return j})})}
+function ibReg(){if(!hasApi()||IB.reg)return Promise.resolve(IB.reg);return apiP("/reg/"+D.sid,{t:D.stk}).then(function(j){IB.reg=!!j.ok;return IB.reg}).catch(function(){return false})}
+function ibPoll(){
+ if(!hasApi()||mode!=="a"||IB.busy||!actv())return Promise.resolve();
+ IB.busy=true;
+ return ibReg().then(function(ok){
+  if(!ok){IB.st="اتصال برقرار نشد";return}
+  return apiP("/get/"+D.sid,{t:D.stk}).then(function(j){
+   if(!j.ok){IB.st="خطا در دریافت";return}
+   var ids=[],add=0;
+   j.items.forEach(function(it){
+    ids.push(it.id);
+    if(it.k==="b"){var o=parseReq(it.x);if(o&&o.date&&!D.ap.some(function(a){return a.date===o.date&&a.time===o.time&&J.phone(o.phone)===a.phone&&a.st!=="rej"})){o.src="auto";newAp(o);add++}}
+    else if(it.k==="r"){var r=parseRv(it.x);if(r){r.id=J.uid();r.date=td();D.rv.push(r);add++}}
+   });
+   IB.st="آخرین بررسی: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});
+   if(ids.length){sv();return apiP("/ack/"+D.sid,{t:D.stk,ids:ids}).then(function(){if(add){IB.n+=add;A()}})}
+  });
+ }).catch(function(){IB.st="اتصال برقرار نشد"}).then(function(){IB.busy=false})
+}
+function ibNow(){ibPoll().then(function(){var e=$("ibs");if(e)e.textContent=IB.st})}
+if(hasApi()){setInterval(function(){if(!document.hidden&&mode==="a")ibPoll()},30000);document.addEventListener("visibilitychange",function(){if(!document.hidden)ibPoll()})}
+
 /* ================= شروع ================= */
 window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();IP=e});
-if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){mode="a";sv();A()})}else{autoGen();sv();A();if(PUB)verifyAll().then(A)}
+if(HASHP){HASHP.then(function(o){C0=unpackPub(o);mode="c";setTheme(C0.th);C()}).catch(function(){mode="a";sv();A()})}else{autoGen();sv();A();if(PUB)verifyAll().then(A);if(hasApi())setTimeout(ibPoll,1500)}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js")}catch(e){}
